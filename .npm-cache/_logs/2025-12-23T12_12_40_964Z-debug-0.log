@@ -1,0 +1,19 @@
+0 verbose cli /Users/teja/.nvm/versions/node/v18.20.8/bin/node /Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@10.8.2
+2 info using node@v18.20.8
+3 silly config load:file:/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/teja/Documents/Mark/ReactNative/.npmrc
+5 silly config load:file:/Users/teja/.npmrc
+6 silly config load:file:/Users/teja/.nvm/versions/node/v18.20.8/etc/npmrc
+7 verbose title npm exec expo install expo-barcode-scanner
+8 verbose argv "exec" "--" "expo" "install" "expo-barcode-scanner"
+9 verbose logfile logs-max:10 dir:/Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_12_40_964Z-
+10 verbose logfile /Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_12_40_964Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/teja/Documents/Mark/ReactNative
+13 verbose os Darwin 24.6.0
+14 verbose node v18.20.8
+15 verbose npm  v10.8.2
+16 verbose exit 1
+17 verbose code 1
+18 error A complete log of this run can be found in: /Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_12_40_964Z-debug-0.log

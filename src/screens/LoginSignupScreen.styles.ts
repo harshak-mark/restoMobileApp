@@ -1,0 +1,257 @@
+import { Dimensions, StyleSheet } from 'react-native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+export const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  headerTabsWrapper: {
+    position: 'relative',
+    paddingTop: SCREEN_HEIGHT * 0.08,
+    paddingBottom: SCREEN_HEIGHT * 0.02,
+    paddingHorizontal: 24,
+    zIndex: 10,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    overflow: 'hidden',
+  },
+  headerTabsBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  logoWrapper: {
+    alignItems: 'center',
+    zIndex: 1,
+    marginBottom: SCREEN_HEIGHT * 0.04,
+  },
+  bgWrapper: {
+    flex: 1,
+    width: '100%',
+    position: 'relative',
+  },
+  bgSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    zIndex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: SCREEN_HEIGHT * 0.06 + 10,
+    left: 24,
+    zIndex: 2,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    zIndex: 1,
+  },
+  tab: {
+    flex: 1,
+    paddingBottom: 12,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    alignSelf: 'center',
+    width: 134,
+    height: 7,
+    backgroundColor: '#FB8C00',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  tabText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 16 : 18,
+    color: '#000000',
+  },
+  tabTextActive: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 16 : 18,
+    color: '#FB8C00',
+  },
+  loginWithSection: {
+    marginTop: SCREEN_HEIGHT * 0.04,
+    marginBottom: 24,
+  },
+  loginWithText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
+    color: '#000000',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  googleIcon: {
+    marginRight: 12,
+  },
+  googleButtonLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
+    color: '#2C2F24',
+    textAlign: 'center',
+  },
+  formContainer: {
+    flex: 1,
+  },
+  inputWrapper: {
+    marginBottom: 10,
+  },
+  inputLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
+    color: '#1F1F1F',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingVertical: SCREEN_HEIGHT < 700 ? 12 : 14,
+    paddingHorizontal: 16,
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
+    color: '#2C2F24',
+    borderWidth: 0,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    borderWidth: 0,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: SCREEN_HEIGHT < 700 ? 12 : 14,
+    paddingHorizontal: 16,
+    fontFamily: 'Inter_500Medium',
+    fontSize: SCREEN_HEIGHT < 700 ? 14 : 16,
+    color: '#2C2F24',
+  },
+  eyeIcon: {
+    paddingRight: 16,
+    paddingLeft: 8,
+  },
+  forgotPassword: {
+    marginBottom: 16,
+    alignSelf: 'flex-end',
+  },
+  forgotPasswordText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#1F1F1F',
+  },
+  passwordRequirements: {
+    marginBottom: 16,
+  },
+  passwordRequirementsText: {
+    fontFamily: 'Inter_300Light',
+    fontSize: 12,
+    color: '#000000',
+    marginBottom: 8,
+  },
+  passwordStrengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordStrengthBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  passwordStrengthFill: {
+    height: '100%',
+    width: '20%',
+    backgroundColor: '#4285F4',
+    borderRadius: 2,
+  },
+  passwordStrengthText: {
+    fontFamily: 'Inter_300Light',
+    fontSize: 12,
+    color: '#FB8C00',
+  },
+  errorText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#FF0000',
+    marginTop: 4,
+  },
+  termsText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    color: '#1F1F1F',
+    marginBottom: 24,
+    lineHeight: 11.8,
+    textAlign: 'center',
+  },
+  termsTextOrange: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    color: '#FB8C00',
+    lineHeight: 11.8,
+  },
+  submitButton: {
+    width: SCREEN_HEIGHT < 700 ? 160 : 180,
+    height: SCREEN_HEIGHT < 700 ? 45 : 50,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: SCREEN_HEIGHT < 700 ? 30 : 40,
+    alignSelf: 'center',
+  },
+  submitButtonText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: SCREEN_HEIGHT < 700 ? 15 : 17,
+    lineHeight: SCREEN_HEIGHT < 700 ? 15 : 20,
+    color: '#F6F6F9',
+  },
+});
+
+
+
+
+

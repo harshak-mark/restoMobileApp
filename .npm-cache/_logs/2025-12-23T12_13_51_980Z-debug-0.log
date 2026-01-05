@@ -1,0 +1,57 @@
+0 verbose cli /Users/teja/.nvm/versions/node/v18.20.8/bin/node /Users/teja/.nvm/versions/node/v18.20.8/bin/npm
+1 info using npm@10.8.2
+2 info using node@v18.20.8
+3 silly config load:file:/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/teja/Documents/Mark/ReactNative/.npmrc
+5 silly config load:file:/Users/teja/.npmrc
+6 silly config load:file:/Users/teja/.nvm/versions/node/v18.20.8/etc/npmrc
+7 verbose title npm install expo-barcode-scanner
+8 verbose argv "install" "expo-barcode-scanner"
+9 verbose logfile logs-max:10 dir:/Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_13_51_980Z-
+10 verbose logfile /Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_13_51_980Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose stack Error: EPERM: operation not permitted, open '/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/key/index.js'
+12 verbose stack     at Object.openSync (node:fs:596:3)
+12 verbose stack     at Object.readFileSync (node:fs:464:35)
+12 verbose stack     at Module._extensions..js (node:internal/modules/cjs/loader:1385:18)
+12 verbose stack     at Module.load (node:internal/modules/cjs/loader:1203:32)
+12 verbose stack     at Module._load (node:internal/modules/cjs/loader:1019:12)
+12 verbose stack     at Module.require (node:internal/modules/cjs/loader:1231:19)
+12 verbose stack     at require (node:internal/modules/helpers:177:18)
+12 verbose stack     at Object.<anonymous> (/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/verifier.js:21:15)
+12 verbose stack     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+12 verbose stack     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+13 error code EPERM
+14 error syscall open
+15 error path /Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/key/index.js
+16 error errno -1
+17 error Error: EPERM: operation not permitted, open '/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/key/index.js'
+17 error     at Object.openSync (node:fs:596:3)
+17 error     at Object.readFileSync (node:fs:464:35)
+17 error     at Module._extensions..js (node:internal/modules/cjs/loader:1385:18)
+17 error     at Module.load (node:internal/modules/cjs/loader:1203:32)
+17 error     at Module._load (node:internal/modules/cjs/loader:1019:12)
+17 error     at Module.require (node:internal/modules/cjs/loader:1231:19)
+17 error     at require (node:internal/modules/helpers:177:18)
+17 error     at Object.<anonymous> (/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/verifier.js:21:15)
+17 error     at Module._compile (node:internal/modules/cjs/loader:1364:14)
+17 error     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10) {
+17 error   errno: -1,
+17 error   syscall: 'open',
+17 error   code: 'EPERM',
+17 error   path: '/Users/teja/.nvm/versions/node/v18.20.8/lib/node_modules/npm/node_modules/@sigstore/verify/dist/key/index.js'
+17 error }
+18 error
+18 error The operation was rejected by your operating system.
+18 error It is likely you do not have the permissions to access this file as the current user
+18 error
+18 error If you believe this might be a permissions issue, please double-check the
+18 error permissions of the file and its containing directories, or try running
+18 error the command again as root/Administrator.
+19 verbose cwd /Users/teja/Documents/Mark/ReactNative
+20 verbose os Darwin 24.6.0
+21 verbose node v18.20.8
+22 verbose npm  v10.8.2
+23 verbose exit -1
+24 verbose code -1
+25 error A complete log of this run can be found in: /Users/teja/Documents/Mark/ReactNative/.npm-cache/_logs/2025-12-23T12_13_51_980Z-debug-0.log
