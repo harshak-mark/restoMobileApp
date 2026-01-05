@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Logo from '../../assets/LOGO.svg';
 import GoogleIcon from '../../assets/images/Google.svg';
 import LoginBg from '../../assets/images/start/loginbg.svg';
@@ -29,7 +30,8 @@ type TabType = 'login' | 'signup';
 
 export default function LoginSignupScreen() {
   const { theme } = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => createStyles(theme, insets.bottom), [theme, insets.bottom]);
   const dispatch = useAppDispatch();
   const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
   const params = useLocalSearchParams<{ tab?: string }>();

@@ -2,7 +2,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const createStyles = (theme: any) =>
+export const createStyles = (theme: any, bottomInset: number = 0) =>
   StyleSheet.create({
   root: {
     flex: 1,
@@ -51,7 +51,10 @@ export const createStyles = (theme: any) =>
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: SCREEN_HEIGHT < 700 ? 100 : 120,
+    paddingBottom: Math.max(
+      SCREEN_HEIGHT < 700 ? 100 : 120,
+      bottomInset > 0 ? bottomInset + 80 : 0
+    ),
     flexGrow: 1,
   },
   backButton: {
@@ -255,7 +258,10 @@ export const createStyles = (theme: any) =>
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 'auto',
-    marginBottom: SCREEN_HEIGHT < 700 ? 80 : 100,
+    marginBottom: Math.max(
+      SCREEN_HEIGHT < 700 ? 80 : 100,
+      bottomInset > 0 ? bottomInset + 60 : 0
+    ),
     alignSelf: 'center',
   },
   submitButtonText: {

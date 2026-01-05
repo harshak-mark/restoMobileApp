@@ -113,6 +113,39 @@ export default function HomeScreen() {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [activeFloor, setActiveFloor] = useState<FloorId>('ground');
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
+  
+  // Table reservation state
+  const [tableView, setTableView] = useState<'all' | 'reservation'>('all');
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [isTableBooked, setIsTableBooked] = useState(false);
+  const [modalMode, setModalMode] = useState<'view' | 'booking'>('view');
+  const [bookingDetails, setBookingDetails] = useState<{
+    tableId: string;
+    date: Date;
+    time: Date;
+    guests: string;
+    name: string;
+    phone: string;
+  } | null>(null);
+  
+  // Temporary table data - some reserved, some available
+  const [tableData, setTableData] = useState([
+    { id: 'T-1', status: 'available' },
+    { id: 'T-2', status: 'reserved' },
+    { id: 'T-3', status: 'available' },
+    { id: 'T-4', status: 'reserved' },
+    { id: 'T-5', status: 'reserved' },
+    { id: 'T-6', status: 'reserved' },
+    { id: 'T-7', status: 'available' },
+    { id: 'T-8', status: 'reserved' },
+    { id: 'T-9', status: 'available' },
+    { id: 'T-10', status: 'available' },
+    { id: 'T-11', status: 'available' },
+    { id: 'T-12', status: 'reserved' },
+    { id: 'T-13', status: 'available' },
+    { id: 'T-14', status: 'reserved' },
+    { id: 'T-15', status: 'available' },
+  ]);
 
   // Address dropdown state
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
@@ -148,6 +181,13 @@ export default function HomeScreen() {
       if (firstSeat) setSelectedSeat(firstSeat);
     }
   }, [activeFloor, selectedSeat]);
+
+  // Debug: Log booking details changes
+  useEffect(() => {
+    console.log('Booking Details Updated:', bookingDetails);
+    console.log('Is Table Booked:', isTableBooked);
+    console.log('Table View:', tableView);
+  }, [bookingDetails, isTableBooked, tableView]);
 
   // Auto-slide carousel every 3 seconds
   useEffect(() => {
@@ -430,7 +470,11 @@ export default function HomeScreen() {
                 placeholder="No of Guest"
                 placeholderTextColor={theme.textMuted}
                 value={reservationForm.noOfGuests}
-                onChangeText={(text) => setReservationForm({ ...reservationForm, noOfGuests: text })}
+                onChangeText={(text) => {
+                  // Only allow numbers
+                  const numericValue = text.replace(/[^0-9]/g, '');
+                  setReservationForm({ ...reservationForm, noOfGuests: numericValue });
+                }}
                 keyboardType="number-pad"
               />
             </View>
@@ -442,7 +486,11 @@ export default function HomeScreen() {
                 placeholder="Full Name"
                 placeholderTextColor={theme.textMuted}
                 value={reservationForm.fullName}
-                onChangeText={(text) => setReservationForm({ ...reservationForm, fullName: text })}
+                onChangeText={(text) => {
+                  // Only allow letters and spaces
+                  const lettersOnly = text.replace(/[^a-zA-Z\s]/g, '');
+                  setReservationForm({ ...reservationForm, fullName: lettersOnly });
+                }}
               />
             </View>
 
@@ -473,8 +521,13 @@ export default function HomeScreen() {
                 placeholder="Phone No"
                 placeholderTextColor={theme.textMuted}
                 value={reservationForm.phoneNo}
-                onChangeText={(text) => setReservationForm({ ...reservationForm, phoneNo: text })}
+                onChangeText={(text) => {
+                  // Only allow numbers, max 10 digits
+                  const numericValue = text.replace(/[^0-9]/g, '').slice(0, 10);
+                  setReservationForm({ ...reservationForm, phoneNo: numericValue });
+                }}
                 keyboardType="phone-pad"
+                maxLength={10}
               />
             </View>
 
@@ -483,14 +536,56 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={[
                   styles.checkAvailabilityButton,
-                  { backgroundColor: theme.background, borderColor: theme.buttonPrimary },
+                  { 
+                    backgroundColor: theme.background, 
+                    borderColor: theme.buttonPrimary,
+                    opacity: (selectedDate && selectedTime && 
+                              reservationForm.noOfGuests.trim() !== '') ? 1 : 0.5,
+                  },
                 ]}
-                onPress={() => setShowAvailabilityModal(true)}
+                onPress={() => {
+                  if (selectedDate && selectedTime && reservationForm.noOfGuests.trim() !== '') {
+                    setModalMode('view');
+                    setTableView('all');
+                    setShowAvailabilityModal(true);
+                  }
+                }}
+                disabled={!selectedDate || !selectedTime || reservationForm.noOfGuests.trim() === ''}
               >
                 <Text style={[styles.checkAvailabilityText, { color: theme.buttonPrimary }]}>Check availability</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: theme.buttonPrimary, borderColor: '#FFFFFF' }]}
+                style={[
+                  styles.submitButton, 
+                  { 
+                    backgroundColor: theme.buttonPrimary, 
+                    borderColor: '#FFFFFF',
+                    opacity: (selectedDate && selectedTime && 
+                              reservationForm.noOfGuests.trim() !== '' &&
+                              reservationForm.fullName.trim() !== '' &&
+                              reservationForm.phoneNo.length === 10) ? 1 : 0.5,
+                  }
+                ]}
+                onPress={() => {
+                  if (selectedDate && selectedTime && 
+                      reservationForm.noOfGuests.trim() !== '' &&
+                      reservationForm.fullName.trim() !== '' &&
+                      reservationForm.phoneNo.length === 10) {
+                    setModalMode('booking');
+                    // If booking already exists, show reservation tab, otherwise show all tables
+                    if (bookingDetails || isTableBooked) {
+                      setTableView('reservation');
+                    } else {
+                      setTableView('all');
+                    }
+                    setSelectedTable(null);
+                    setShowAvailabilityModal(true);
+                  }
+                }}
+                disabled={!selectedDate || !selectedTime || 
+                         reservationForm.noOfGuests.trim() === '' ||
+                         reservationForm.fullName.trim() === '' ||
+                         reservationForm.phoneNo.length !== 10}
               >
                 <Text style={[styles.submitButtonText, { color: theme.buttonText }]}>Submit</Text>
               </TouchableOpacity>
@@ -541,95 +636,317 @@ export default function HomeScreen() {
         transparent
         animationType="fade"
         visible={showAvailabilityModal}
-        onRequestClose={() => setShowAvailabilityModal(false)}
+        onRequestClose={() => {
+          setShowAvailabilityModal(false);
+          setSelectedTable(null);
+          // Only clear form fields if no booking has been made
+          // IMPORTANT: Do NOT clear bookingDetails - preserve booking state
+          if (!isTableBooked && !bookingDetails) {
+            setSelectedDate(null);
+            setSelectedTime(null);
+            setReservationForm({ noOfGuests: '', fullName: '', phoneNo: '' });
+            setTableView('all');
+          }
+          // If booking exists, keep reservation tab active when reopening
+          if (bookingDetails || isTableBooked) {
+            setTableView('reservation');
+          }
+          setModalMode('view');
+        }}
       >
         <View style={styles.availabilityOverlay}>
-          <View style={[styles.availabilityCard, { backgroundColor: t.card || t.backgroundSecondary || t.background || '#fff' }]}>
+          <View style={[styles.availabilityCard, { backgroundColor: theme.background }]}>
             <View style={styles.availabilityHeader}>
               <Text style={[styles.availabilityTitle, { color: theme.textPrimary }]}>
-                 {floorTabs.find((f) => f.id === activeFloor)?.label ?? 'Ground Floor'}
+                Select Table
               </Text>
-              <TouchableOpacity onPress={() => setShowAvailabilityModal(false)} style={styles.availabilityClose}>
-                <Ionicons name="close" size={20} color={theme.textPrimary} />
+              <TouchableOpacity onPress={() => {
+                setShowAvailabilityModal(false);
+                setSelectedTable(null);
+                // Only clear form fields if no booking has been made
+                // IMPORTANT: Do NOT clear bookingDetails - preserve booking state
+                if (!isTableBooked && !bookingDetails) {
+                  setSelectedDate(null);
+                  setSelectedTime(null);
+                  setReservationForm({ noOfGuests: '', fullName: '', phoneNo: '' });
+                  setTableView('all');
+                }
+                // If booking exists, keep reservation tab active when reopening
+                if (bookingDetails || isTableBooked) {
+                  setTableView('reservation');
+                }
+                setModalMode('view');
+              }} style={styles.availabilityClose}>
+                <Ionicons name="close" size={24} color={theme.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.availabilityTabsRow}>
-              {floorTabs.map((tab) => {
-                const isActive = activeFloor === tab.id;
-                return (
-                  <TouchableOpacity
-                    key={tab.id}
+            {/* Toggle Buttons - Only show in booking mode */}
+            {modalMode === 'booking' && (
+              <View style={styles.toggleButtonsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    {
+                      backgroundColor: tableView === 'all' ? theme.buttonPrimary : theme.backgroundSecondary,
+                    },
+                  ]}
+                  onPress={() => setTableView('all')}
+                >
+                  <Text
                     style={[
-                      styles.availabilityTab,
+                      styles.toggleButtonText,
+                      { color: tableView === 'all' ? theme.buttonText : theme.textPrimary },
+                    ]}
+                  >
+                    All Table
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    {
+                      backgroundColor: tableView === 'reservation' ? theme.buttonPrimary : theme.backgroundSecondary,
+                      opacity: (!isTableBooked && !bookingDetails) ? 0.5 : 1,
+                    },
+                  ]}
+                onPress={() => {
+                  // Always allow clicking reservation tab in booking mode
+                  if (modalMode === 'booking' || isTableBooked || bookingDetails) {
+                    setTableView('reservation');
+                  }
+                }}
+                disabled={modalMode !== 'booking' && !isTableBooked && !bookingDetails}
+                >
+                  <Text
+                    style={[
+                      styles.toggleButtonText,
+                      { color: tableView === 'reservation' ? theme.buttonText : theme.textPrimary },
+                    ]}
+                  >
+                    Reservation
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Show different content based on tab view */}
+            {tableView === 'all' ? (
+              <>
+                {/* Legend */}
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendSquare, { backgroundColor: '#007A59' }]} />
+                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>Available</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendSquare, { backgroundColor: '#D10505' }]} />
+                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>Reserved</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendSquare, { backgroundColor: '#FFB500' }]} />
+                    <Text style={[styles.legendText, { color: theme.textPrimary }]}>Available soon</Text>
+                  </View>
+                </View>
+
+                {/* Table Grid */}
+                <View style={styles.tableGrid}>
+                  {tableData.map((table, index) => {
+                    const isSelected = selectedTable === table.id;
+                    const isAvailable = table.status === 'available';
+                    const isReserved = table.status === 'reserved';
+                    
+                    // Determine background color
+                    let backgroundColor = '#007A59'; // default green for available
+                    if (isReserved) {
+                      backgroundColor = '#D10505'; // red for reserved
+                    } else if (isSelected && modalMode === 'booking') {
+                      backgroundColor = '#FB8C00'; // orange for selected (only in booking mode)
+                    }
+
+                    // Remove right margin for last item in each row (every 5th item)
+                    const isLastInRow = (index + 1) % 5 === 0;
+
+                    return (
+                      <TouchableOpacity
+                        key={table.id}
+                        style={[
+                          styles.tableItem,
+                          {
+                            backgroundColor,
+                            marginRight: isLastInRow ? 0 : 8,
+                          },
+                        ]}
+                        onPress={() => {
+                          // Only allow selection in booking mode
+                          if (modalMode === 'booking' && isAvailable && !isReserved) {
+                            setSelectedTable(table.id);
+                          }
+                        }}
+                        disabled={isReserved || modalMode === 'view'}
+                        activeOpacity={(isReserved || modalMode === 'view') ? 1 : 0.7}
+                      >
+                        <Text style={styles.tableItemText}>{table.id}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Book Your Table / Show Details Button - Only show in booking mode */}
+                {modalMode === 'booking' && (
+                  <TouchableOpacity
+                    style={[
+                      styles.bookTableButton,
                       {
-                        backgroundColor: isActive ? t.buttonPrimary : t.backgroundSecondary,
-                        borderColor: isActive ? t.buttonPrimary : t.divider,
+                        backgroundColor: (selectedTable || isTableBooked) ? theme.buttonPrimary : theme.backgroundSecondary,
+                        opacity: (selectedTable || isTableBooked) ? 1 : 0.5,
                       },
                     ]}
                     onPress={() => {
-                      setActiveFloor(tab.id);
-                      const firstSeat = seatsByFloor[tab.id][0]?.id;
-                      setSelectedSeat(firstSeat || null);
+                      if (isTableBooked && bookingDetails) {
+                        // Switch to reservation tab to show details
+                        setTableView('reservation');
+                      } else if (selectedTable && selectedDate && selectedTime) {
+                        // Book the table
+                        const updatedTableData = tableData.map((table) =>
+                          table.id === selectedTable ? { ...table, status: 'reserved' as const } : table
+                        );
+                        setTableData(updatedTableData);
+                        
+                        // Store booking details - ensure all data is captured
+                        const bookingData = {
+                          tableId: selectedTable,
+                          date: selectedDate,
+                          time: selectedTime,
+                          guests: reservationForm.noOfGuests || '0',
+                          name: reservationForm.fullName || 'Guest',
+                          phone: reservationForm.phoneNo || '',
+                        };
+                        
+                        console.log('Booking table with details:', bookingData);
+                        setBookingDetails(bookingData);
+                        setIsTableBooked(true);
+                        setSelectedTable(null);
+                        // Automatically switch to reservation tab after booking
+                        setTableView('reservation');
+                      }
                     }}
+                    disabled={!selectedTable && !isTableBooked}
+                    activeOpacity={0.8}
                   >
                     <Text
                       style={[
-                        styles.availabilityTabText,
-                        { color: isActive ? t.buttonText : t.textPrimary },
+                        styles.bookTableButtonText,
+                        { color: (selectedTable || isTableBooked) ? theme.buttonText : theme.textMuted },
                       ]}
                     >
-                      {tab.label}
+                      {isTableBooked ? 'SHOW DETAILS' : 'BOOK YOUR TABLE'}
                     </Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.seatRow}>
-              {seatsByFloor[activeFloor].map((seat) => {
-                const isSelected = selectedSeat === seat.id;
-                return (
-                  <TouchableOpacity
-                    key={seat.id}
-                    style={[
-                      styles.seatCard,
-                      {
-                        backgroundColor: isSelected ? '#9AE6B4' : t.backgroundSecondary,
-                        borderColor: isSelected ? '#38A169' : t.divider,
-                        shadowColor: t.mode === 'dark' ? '#000' : '#000',
-                      },
-                    ]}
-                    onPress={() => setSelectedSeat(seat.id)}
-                    activeOpacity={0.9}
-                  >
-                    <View style={styles.seatDecorRow}>
-                      <View style={[styles.seatDot, { backgroundColor: isSelected ? '#38A169' : t.divider }]} />
-                      <View style={[styles.seatDot, { backgroundColor: isSelected ? '#38A169' : t.divider }]} />
+                )}
+              </>
+            ) : (
+              /* Reservation Tab - Show Confirmation Details */
+              (bookingDetails && bookingDetails.tableId && bookingDetails.date && bookingDetails.time) ? (
+                <ScrollView
+                  style={styles.reservationDetailsContainer}
+                  contentContainerStyle={styles.reservationDetailsContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* Success Icon */}
+                  <View style={styles.confirmationIconContainer}>
+                    <View style={styles.confirmationIconCircle}>
+                      <Ionicons name="checkmark" size={20} color="#FFFFFF" />
                     </View>
-                    <Text style={[styles.seatIdText, { color: t.textPrimary }]}>{seat.id}</Text>
-                    <Text style={[styles.seatMetaText, { color: t.textSecondary }]}>{seat.seats} Seats</Text>
-                    <View style={styles.seatDecorRow}>
-                      <View style={[styles.seatDot, { backgroundColor: isSelected ? '#38A169' : t.divider }]} />
-                      <View style={[styles.seatDot, { backgroundColor: isSelected ? '#38A169' : t.divider }]} />
-                    </View>
-                    {isSelected && (
-                      <View style={styles.seatCheck}>
-                        <Ionicons name="checkmark" size={16} color="#38A169" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                  </View>
 
-            <TouchableOpacity
-              style={[styles.reserveCta, { backgroundColor: t.textPrimary }]}
-              onPress={() => setShowAvailabilityModal(false)}
-              activeOpacity={0.9}
-            >
-              <Text style={[styles.reserveCtaText, { color: t.buttonText }]}>Reserve Table</Text>
-            </TouchableOpacity>
+                  {/* Title */}
+                  <Text style={styles.confirmationTitle}>
+                    Table Booked <Text style={styles.confirmationTitleHighlight}>Successfully</Text>
+                  </Text>
+
+                  {/* Divider */}
+                  <View style={styles.confirmationDivider} />
+
+                  {/* User Info */}
+                  <Text style={styles.confirmationUserName}>
+                    {bookingDetails.name || 'Guest'}
+                    <Text style={styles.confirmationUserPhone}>
+                    {bookingDetails.phone ? `       +1 ${bookingDetails.phone.slice(0, 4)} ${bookingDetails.phone.slice(4, 7)} ${bookingDetails.phone.slice(7)}` : '+1 000 000 0000'}
+                  </Text>
+                  </Text>
+                 
+
+                  {/* Divider */}
+                  <View style={styles.confirmationDivider} />
+
+                  {/* Booking Details */}
+                  <View style={styles.confirmationDetailsRow}>
+                    <Ionicons name="calendar-outline" size={20} color="#666" />
+                    <Text style={styles.confirmationDetailsText}>
+                      {formatDate(bookingDetails.date)} | {formatTime(bookingDetails.time)}
+                    </Text>
+                  </View>
+                  <View style={styles.confirmationDetailsRow}>
+                    <Ionicons name="people-outline" size={20} color="#666" />
+                    <Text style={styles.confirmationDetailsText}>
+                      {bookingDetails.guests || '0'} Guests
+                    </Text>
+                  </View>
+                  <View style={styles.confirmationDetailsRow}>
+                    <Ionicons name="restaurant-outline" size={20} color="#666" />
+                    <Text style={styles.confirmationDetailsText}>
+                      No : {bookingDetails.tableId.replace('T-', '') || 'N/A'} / Indoor
+                    </Text>
+                  </View>
+
+                  {/* Divider */}
+                  <View style={styles.confirmationDivider} />
+
+                  {/* Action Buttons */}
+                  <View style={styles.confirmationButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.confirmationDoneButton, { backgroundColor: theme.buttonPrimary }]}
+                      onPress={() => {
+                        setShowAvailabilityModal(false);
+                        setSelectedTable(null);
+                        setIsTableBooked(false);
+                        setBookingDetails(null);
+                        // Reset form
+                        setReservationForm({ noOfGuests: '', fullName: '', phoneNo: '' });
+                        setSelectedDate(null);
+                        setSelectedTime(null);
+                        setTableView('all');
+                        router.push('/home');
+                      }}
+                    >
+                      <Text style={[styles.confirmationDoneButtonText, { color: theme.buttonText }]}>Done</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.confirmationDownloadButton}
+                      onPress={() => {
+                        // Download pass functionality
+                        console.log('Download pass');
+                      }}
+                    >
+                      <Ionicons name="download-outline" size={20} color="#000" />
+                      <Text style={styles.confirmationDownloadButtonText}>Download Pass</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Promotional Message */}
+                  <Text style={styles.confirmationPromoText}>
+                    Your table is reserved! Since you reserved your table with Dine in Florida, your will automatically receive 2% off your bill when you pay
+                  </Text>
+                </ScrollView>
+              ) : (
+                <View style={styles.noBookingContainer}>
+                  <Text style={[styles.noBookingText, { color: theme.textSecondary }]}>
+                    No booking found. Please book a table first.
+                  </Text>
+                </View>
+              )
+            )}
           </View>
         </View>
       </Modal>
@@ -662,6 +979,7 @@ export default function HomeScreen() {
           </View>
         </Modal>
       )}
+
 
       {/* Profile Drawer */}
       <ProfileDrawer

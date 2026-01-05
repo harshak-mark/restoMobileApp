@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SixSideBoxSvg from '../../assets/images/6sidebox.svg';
 import SubtractBorderSvg from '../../assets/images/food/icons/Subtractborder.svg';
@@ -19,22 +20,30 @@ interface BottomNavProps {
 const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
   const { theme } = useTheme();
   const cartCount = useAppSelector((state) => selectCartCount(state as RootState));
+  const insets = useSafeAreaInsets();
+  const hasNavButtons = insets.bottom > 0;
+
+  // Calculate dynamic spacing based on navigation buttons
+  const svgHeight = 82 + (hasNavButtons ? insets.bottom : 0);
+  const hexagonBottom = 30 + (hasNavButtons ? insets.bottom / 2 : 0);
+  const navBarHeight = 28 + (hasNavButtons ? insets.bottom / 2 : 0);
+  const navBarPaddingBottom = hasNavButtons ? insets.bottom : 0;
 
   const iconColor = (key: TabKey) => (active === key ? theme.iconActive : theme.iconColor);
 
   return (
     <View style={styles.wrapper}>
       <View style={styles.footerSvgWrapper}>
-        <SubtractBorderSvg width="100%" height={82} preserveAspectRatio="none" />
+        <SubtractBorderSvg width="100%" height={svgHeight} preserveAspectRatio="none" />
       </View>
 
-      <View style={styles.hexagonContainer}>
+      <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
         <TouchableOpacity>
           <SixSideBoxSvg width={54} height={61} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomNavBar}>
+      <View style={[styles.bottomNavBar, { height: navBarHeight, paddingBottom: navBarPaddingBottom }]}>
         <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
           <Ionicons name="home" size={24} color={iconColor('home')} />
           <Text style={[styles.navLabel, { color: iconColor('home') }]}>Home</Text>
