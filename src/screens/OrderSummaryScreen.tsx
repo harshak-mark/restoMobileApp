@@ -1,22 +1,45 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { useAppSelector } from '../store/hooks';
-import { selectCartItems, selectCartTotals } from '../store/slices/cartSlice';
+import { selectCartItems } from '../store/slices/cartSlice';
 import { useTheme } from '../theme/useTheme';
 
 const OrderSummaryScreen = () => {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ method?: string }>();
   const method = params.method?.toString() || 'online';
-  const items = useAppSelector(selectCartItems);
-  const totals = useAppSelector(selectCartTotals);
+  const cartItems = useAppSelector(selectCartItems);
+  const orders = useAppSelector((state) => state.orders.list);
   const addresses = useAppSelector((state) => state.address.items);
+  
+  // Get items from most recent order if cart is empty, otherwise use cart items
+  const items = useMemo(() => {
+    if (cartItems.length > 0) {
+      return cartItems;
+    }
+    // Get items from most recent order
+    if (orders.length > 0) {
+      const mostRecentOrder = orders[orders.length - 1];
+      return mostRecentOrder.items || [];
+    }
+    return [];
+  }, [cartItems, orders]);
+
+  const [orderNote, setOrderNote] = useState<string>('');
+  const [isEditingNote, setIsEditingNote] = useState(false);
 
   const primaryAddress = addresses[0];
-  const orderId = useMemo(() => `#ORD${Date.now().toString().slice(-6)}`, []);
+  const orderId = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `#ORD${year}${month}${day}`;
+  }, []);
+
   const paymentStatus =
     method === 'cash'
       ? 'Cash on Delivery'
@@ -24,87 +47,167 @@ const OrderSummaryScreen = () => {
       ? 'Paid via UPI'
       : method === 'card'
       ? 'Paid via Card'
-      : 'Paid';
+      : 'Paid via UPI';
+
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const itemNames = items
+    .map((item) => {
+      if (item.quantity > 1) {
+        return `${item.name}(${item.quantity}x)`;
+      }
+      return item.name;
+    })
+    .join(', ');
+
+  const handleSaveNote = () => {
+    setIsEditingNote(false);
+  };
+
+  const handleNoteSubmit = () => {
+    handleSaveNote();
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
-        <TouchableOpacity onPress={() => router.replace('/home')} style={styles.headerIcon}>
-          <Ionicons name="chevron-back" size={22} color={theme.buttonText} />
+      {/* Header with back button */}
+      {/* <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
+        <TouchableOpacity
+          onPress={() => router.replace('/home')}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Order Summary</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.heroCard, { backgroundColor: theme.card || '#fff' }]}>
-          <View style={[styles.statusIcon, { backgroundColor: theme.buttonPrimary }]}>
-            <Ionicons name="checkmark" size={26} color={theme.buttonText} />
+        <View style={styles.headerSpacer} />
+      </View> */}
+      
+      <ScrollView 
+        contentContainerStyle={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Success Header Section */}
+        <View style={styles.successHeader}>
+          <View style={[styles.successIcon, { backgroundColor: theme.buttonPrimary }]}>
+            <Ionicons name="checkmark" size={40} color="#FFFFFF" />
           </View>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Order Placed Successfully!</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Thank you for ordering with Resto Way.
+          <Text style={[styles.successTitle, { color: theme.textPrimary }]}>
+            Order Placed Successfully!
           </Text>
-          <TouchableOpacity
-            style={[styles.trackButton, { backgroundColor: '#F0F4FF' }]}
-            onPress={() => router.replace('/tracking')}
-          >
-            <Text style={[styles.trackText, { color: theme.buttonPrimary }]}>Track My Order</Text>
-          </TouchableOpacity>
+          <Text style={[styles.successSubtitle, { color: theme.textSecondary }]}>
+            Thank you for ordering with Resto! We're preparing your meal
+          </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.card || '#fff' }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Order Details</Text>
-          <Detail label="Order ID" value={orderId} />
-          <Detail label="Estimated Delivery" value="25-30 mins" />
-          <Detail label="Payment Status" value={paymentStatus} />
-          <Detail label="Order Type" value="Delivery" />
-        </View>
+        {/* Order Details Card */}
+        <View style={[styles.orderDetailsCard, { backgroundColor: '#F5F5F5' }]}>
+          <Text style={[styles.orderDetailsTitle, { color: theme.textPrimary }]}>
+            Order Details
+          </Text>
+          
+          {/* 2x2 Grid Layout */}
+          <View style={styles.detailsGrid}>
+            {/* Row 1 */}
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Order ID</Text>
+                <Text style={[styles.detailValue, { color: theme.textPrimary }]}>{orderId}</Text>
+              </View>
+              
+              <View style={styles.gridItem}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Estimated Delivery</Text>
+                <View style={styles.detailValueRow}>
+                  <Ionicons name="time-outline" size={16} color={theme.textPrimary} />
+                  <Text style={[styles.detailValue, { color: theme.textPrimary, marginLeft: 4 }]}>25-30 mins</Text>
+                </View>
+              </View>
+            </View>
 
-        {primaryAddress && (
-          <View style={[styles.card, { backgroundColor: theme.card || '#fff' }]}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Deliver To</Text>
-            <Text style={[styles.bodyText, { color: theme.textPrimary, fontWeight: '700' }]}>
-              {primaryAddress.label}
-            </Text>
-            <Text style={[styles.bodyText, { color: theme.textSecondary }]}>
-              {primaryAddress.address}, {primaryAddress.city} - {primaryAddress.pinCode}
+            {/* Row 2 */}
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Payment Status</Text>
+                <View style={styles.detailValueRow}>
+                  <Ionicons name="checkmark-circle" size={16} color="#00C853" />
+                  <Text style={[styles.detailValue, { color: theme.textPrimary, marginLeft: 4 }]}>{paymentStatus}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.gridItem}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Order Type</Text>
+                <Text style={[styles.detailValue, { color: theme.textPrimary }]}>Delivery</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Order Summary */}
+          <View style={styles.orderSummarySection}>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Order Summary</Text>
+            <Text style={[styles.detailValue, { color: theme.textPrimary }]}>
+              {itemCount} items ({itemNames || 'No items'})
             </Text>
           </View>
-        )}
 
-        <View style={[styles.card, { backgroundColor: theme.card || '#fff' }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Items</Text>
-          {items.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
-              <Text style={[styles.bodyText, { color: theme.textPrimary }]} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={[styles.bodyText, { color: theme.textSecondary }]}>{`x${item.quantity}`}</Text>
-              <Text style={[styles.bodyText, { color: theme.textPrimary, fontWeight: '700' }]}>
-                ₹{(item.price * item.quantity).toFixed(2)}
-              </Text>
-            </View>
-          ))}
+          {/* Divider */}
+          <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+
+          {/* Order Note */}
+          <View style={styles.orderNoteSection}>
+            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Order Note</Text>
+            {isEditingNote ? (
+              <View style={styles.noteEditContainer}>
+                <TextInput
+                  style={[styles.noteInput, { color: theme.textPrimary, borderColor: theme.divider }]}
+                  value={orderNote}
+                  onChangeText={setOrderNote}
+                  placeholder="Add a note..."
+                  placeholderTextColor={theme.textMuted}
+                  multiline
+                  autoFocus
+                  onSubmitEditing={handleNoteSubmit}
+                  onBlur={handleSaveNote}
+                />
+              </View>
+            ) : (
+              <View style={styles.noteDisplayContainer}>
+                {orderNote ? (
+                  <Text style={[styles.detailValue, styles.italicText, { color: theme.textPrimary }]}>
+                    "{orderNote}"
+                  </Text>
+                ) : (
+                  <View style={styles.noNoteContainer}>
+                    <Text style={[styles.noNoteText, { color: theme.textSecondary }]}>No notes</Text>
+                    <TouchableOpacity
+                      onPress={() => setIsEditingNote(true)}
+                      style={styles.addNoteButton}
+                    >
+                      <Text style={[styles.addNoteText, { color: theme.buttonPrimary }]}>Add notes</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.card || '#fff' }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Payment Summary</Text>
-          <SummaryRow label="Subtotal" value={totals.subtotal} />
-          <SummaryRow label="GST (5%)" value={totals.gst} />
-          <SummaryRow label="Service Charge" value={totals.serviceCharge} />
-          <SummaryRow label="Discount" value={totals.discount} />
-          <View style={styles.divider} />
-          <SummaryRow label="Total Amount" value={totals.total} bold />
-        </View>
-
-        <View style={styles.feedbackRow}>
-          <TouchableOpacity style={[styles.secondaryBtn, { borderColor: theme.divider }]} onPress={() => router.replace('/payment')}>
-            <Ionicons name="document-text-outline" size={18} color={theme.textPrimary} />
-            <Text style={[styles.secondaryText, { color: theme.textPrimary }]}>Download Invoice</Text>
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.trackButton, { backgroundColor: theme.buttonPrimary }]}
+            onPress={() => router.push('/tracking')}
+          >
+            <Ionicons name="car-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+            <Text style={[styles.trackButtonText, { color: '#FFFFFF' }]}>Track My Order</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.secondaryBtn, { borderColor: theme.divider }]} onPress={() => router.replace('/home')}>
-            <Ionicons name="home-outline" size={18} color={theme.textPrimary} />
-            <Text style={[styles.secondaryText, { color: theme.textPrimary }]}>Back to Home</Text>
+          
+          <TouchableOpacity
+            style={[styles.downloadButton, { borderColor: theme.textPrimary }]}
+            onPress={() => {
+              // Handle download invoice
+              console.log('Download invoice');
+            }}
+          >
+            <Ionicons name="download-outline" size={20} color={theme.textPrimary} style={styles.buttonIcon} />
+            <Text style={[styles.downloadButtonText, { color: theme.textPrimary }]}>Download Invoice</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -114,121 +217,175 @@ const OrderSummaryScreen = () => {
   );
 };
 
-const Detail = ({ label, value }: { label: string; value: string }) => {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
-  );
-};
-
-const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold?: boolean }) => (
-  <View style={styles.detailRow}>
-    <Text style={[styles.detailLabel, bold && { fontWeight: '800' }]}>{label}</Text>
-    <Text style={[styles.detailValue, bold && { fontWeight: '800' }]}>{`₹${value.toFixed(2)}`}</Text>
-  </View>
-);
-
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: {
+    flex: 1,
+    paddingTop: 40,
+  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 54,
+    paddingTop: 80,
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  headerTitle: { fontSize: 20, fontWeight: '700' },
+  headerSpacer: {
+    flex: 1,
+  },
   content: {
-    padding: 16,
-    paddingBottom: 140,
-    gap: 12,
-  },
-  heroCard: {
-    borderRadius: 16,
-    padding: 16,
+    padding: 20,
+    paddingTop: 40,
+    paddingBottom: 300,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  statusIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  successHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
-  title: { fontSize: 18, fontWeight: '800' },
-  subtitle: { fontSize: 14, marginTop: 4, textAlign: 'center' },
-  trackButton: {
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  orderDetailsCard: {
+    width: '100%',
     borderRadius: 12,
-  },
-  trackText: { fontWeight: '700' },
-  card: {
-    borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    marginBottom: 24,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  bodyText: { fontSize: 14 },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 4,
+  orderDetailsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
   },
-  detailLabel: { fontSize: 13, color: '#666', fontWeight: '600' },
-  detailValue: { fontSize: 13, color: '#111', fontWeight: '600' },
-  itemRow: {
+  detailsGrid: {
+    gap: 16,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  gridItem: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detailValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 6,
+  },
+  orderSummarySection: {
+    marginTop: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 8,
+    marginVertical: 16,
   },
-  feedbackRow: {
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
+  orderNoteSection: {
+    marginTop: 0,
   },
-  secondaryBtn: {
-    flex: 1,
+  noteEditContainer: {
+    marginTop: 4,
+  },
+  noteInput: {
+    fontSize: 14,
+    fontWeight: '600',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: 8,
+    padding: 8,
+    minHeight: 40,
+    textAlignVertical: 'top',
+  },
+  noteDisplayContainer: {
+    marginTop: 4,
+  },
+  noNoteContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  noNoteText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addNoteButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  addNoteText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  italicText: {
+    fontStyle: 'italic',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+    marginTop: 8,
+  },
+  trackButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
-  secondaryText: { fontSize: 14, fontWeight: '700' },
+  trackButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  downloadButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  downloadButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
 });
 
 export default OrderSummaryScreen;
-

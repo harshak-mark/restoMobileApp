@@ -67,15 +67,8 @@ const AddCardScreen = () => {
       })
     );
     
-    // If coming from settings flow, always go to /settings/payment
-    // Otherwise, use the next parameter or default to /settings/payment
-    if (isFromSettings || next === '/payment') {
-      router.replace('/settings/payment?tab=card');
-    } else if (next) {
-      router.replace(next as any);
-    } else {
-      router.replace('/settings/payment?tab=card');
-    }
+    // Navigate to /payment after saving card
+    router.replace('/payment');
   };
 
   return (
@@ -97,7 +90,11 @@ const AddCardScreen = () => {
         <View style={styles.headerIcon} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.cardLogos}>
           {CARD_BRANDS.map((key) => (
             <TouchableOpacity
@@ -209,7 +206,7 @@ const createStyles = (theme: any) =>
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 140,
+    paddingBottom: 300,
     gap: 12,
   },
   cardLogos: {

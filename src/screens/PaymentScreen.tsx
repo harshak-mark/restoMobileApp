@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 140,
+    paddingBottom: 160,
     gap: 14,
   },
   tabRow: {

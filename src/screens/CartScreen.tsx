@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import {
-  Image,
-  ImageSourcePropType,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageSourcePropType,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { foodItems } from '../data/foodItems';
@@ -75,7 +75,11 @@ const CartScreen: React.FC = () => {
         <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Your Cart</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         {items.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>Your cart is empty</Text>
@@ -237,7 +241,7 @@ const createStyles = (theme: any) =>
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 120,
+    paddingBottom: 300,
     gap: 14,
   },
   card: {

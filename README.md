@@ -13,8 +13,13 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2. Start the app
 
    ```bash
-   npx expo start
+   npm start
    ```
+   
+   Or use the platform-specific commands:
+   - `npm run android` - Start on Android
+   - `npm run ios` - Start on iOS
+   - `npm run web` - Start on Web
 
 In the output, you'll find options to open the app in a
 

@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { useAppSelector } from '../store/hooks';
@@ -205,7 +205,11 @@ export default function CheckoutFlowScreen() {
         <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Your Cart</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.tabRow}>
           {TAB_CONFIG.map((tab) => {
             const selected = tab.key === activeTab;
@@ -215,7 +219,6 @@ export default function CheckoutFlowScreen() {
                 style={[
                   styles.tabButton,
                   {
-                    backgroundColor: selected ? theme.backgroundSecondary : theme.background,
                     backgroundColor: selected ? theme.backgroundSecondary : theme.background,
                     borderColor: selected ? theme.buttonPrimary : theme.divider,
                   },
@@ -325,7 +328,7 @@ const createStyles = (theme: any) =>
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 120,
+    paddingBottom: 300,
     gap: 14,
   },
   tabRow: {
@@ -395,6 +398,10 @@ const createStyles = (theme: any) =>
   },
   addressList: {
     gap: 10,
+  },
+  emptyAddress: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   addressCard: {
     borderWidth: 1,

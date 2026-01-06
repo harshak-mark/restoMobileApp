@@ -27,7 +27,7 @@ const PaymentSuccessScreen = () => {
           total: totals.total,
           items: cartItems,
           paymentMethod: paidVia,
-          status: 'history',
+          status: 'ongoing',
         }),
       );
       dispatch(clearCart());

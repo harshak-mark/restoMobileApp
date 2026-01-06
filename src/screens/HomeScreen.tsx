@@ -419,6 +419,7 @@ export default function HomeScreen() {
           <FlatList
             data={visiblePicks}
             numColumns={2}
+            scrollEnabled={false}
             keyExtractor={(item) => item.id}
             renderItem={({ item, index }) => (
               <View 

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../theme/useTheme';
 
@@ -10,116 +10,285 @@ const TrackingScreen = () => {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
+      {/* Header with rounded bottom corners */}
       <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
-        <TouchableOpacity onPress={() => router.replace('/order-summary')} style={styles.headerIcon}>
-          <Ionicons name="chevron-back" size={22} color={theme.buttonText} />
+        <TouchableOpacity 
+          onPress={() => router.replace('/home')}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Live tracking</Text>
+        <Text style={styles.headerTitle}>Live tracking</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Live Order Tracking</Text>
+      {/* Main Card */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.card, { backgroundColor: '#F9FAFB' }]}>
+          <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
+            Live Order Tracking
+          </Text>
 
-        <View style={styles.timeline}>
-          <TimelineItem label="Preparing" sub="Your meal is being cooked" active />
-          <TimelineItem label="Out for Delivery" sub="Driver is on the way" active icon="radio-button-on" />
-          <TimelineItem label="Delivered" sub="Enjoy your meal!" />
-        </View>
+          {/* Timeline Section */}
+          <View style={styles.timelineContainer}>
+            <View style={styles.timelineWrapper}>
+              {/* Preparing - Completed */}
+              <View style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  <View style={[styles.timelineIcon, { backgroundColor: theme.buttonPrimary }]}>
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  </View>
+                  <View style={[styles.timelineLine, { backgroundColor: '#CFCFCF' }]} />
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text style={[styles.timelineLabel, { color: theme.textPrimary }]}>Preparing</Text>
+                  <Text style={[styles.timelineSub, { color: theme.textSecondary }]}>
+                    Your meal is being cooked
+                  </Text>
+                </View>
+              </View>
 
-        <View style={styles.mapPlaceholder}>
-          <Text style={[styles.mapText, { color: theme.textSecondary }]}>Mini Map Placeholder</Text>
-        </View>
+              {/* Out for Delivery - Active */}
+              <View style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  <View style={[styles.timelineIconActive, { borderColor: theme.buttonPrimary }]}>
+                    <View style={[styles.timelineDot, { backgroundColor: '#FFB500' }]} />
+                  </View>
+                  <View style={[styles.timelineLine, { backgroundColor: '#CFCFCF' }]} />
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text style={[styles.timelineLabel, { color: theme.textPrimary }]}>Out for Delivery</Text>
+                  <Text style={[styles.timelineSub, { color: theme.textSecondary }]}>
+                    Driver is on the way
+                  </Text>
+                </View>
+              </View>
 
-        <View style={styles.driverRow}>
-          <Ionicons name="person-circle" size={36} color={theme.textPrimary} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.driverName, { color: theme.textPrimary }]}>Alex Ray</Text>
-            <Text style={[styles.helper, { color: theme.textSecondary }]}>ETA: 12 mins</Text>
+              {/* Delivered - Pending */}
+              <View style={[styles.timelineItem, styles.timelineItemLast]}>
+                <View style={styles.timelineIconContainer}>
+                  <View style={[styles.timelineIconPending, { borderColor: '#CFCFCF' }]} />
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text style={[styles.timelineLabel, { color: theme.textSecondary }]}>Delivered</Text>
+                  <Text style={[styles.timelineSub, { color: theme.textSecondary }]}>
+                    Enjoy your meal!
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-          <Ionicons name="call-outline" size={22} color={theme.buttonPrimary} style={{ marginHorizontal: 8 }} />
-          <Ionicons name="chatbubble-ellipses-outline" size={22} color={theme.buttonPrimary} />
+
+          {/* Map Placeholder */}
+          <View style={[styles.mapPlaceholder, { backgroundColor: '#D1D5DB' }]}>
+            <Text style={[styles.mapText, { color: theme.textSecondary }]}>
+              Mini Map Placeholder
+            </Text>
+          </View>
+
+          {/* Driver Information */}
+          <View style={styles.driverSection}>
+            <View style={styles.driverAvatar}>
+              <Ionicons name="person-circle" size={48} color={theme.textPrimary} />
+            </View>
+            <View style={styles.driverInfo}>
+              <Text style={[styles.driverName, { color: theme.textPrimary }]}>Alex Ray</Text>
+              <Text style={[styles.driverEta, { color: theme.textSecondary }]}>ETA: 12 mins</Text>
+            </View>
+            <View style={styles.driverActions}>
+              <TouchableOpacity 
+                style={[styles.driverActionButton, { backgroundColor: '#FFFFFF' }]}
+                onPress={() => {
+                  // Handle call
+                  console.log('Call driver');
+                }}
+              >
+                <Ionicons name="call" size={20} color={theme.buttonPrimary} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.driverActionButton, { backgroundColor: '#FFFFFF' }]}
+                onPress={() => {
+                  // Handle message
+                  console.log('Message driver');
+                }}
+              >
+                <Ionicons name="chatbubble-ellipses" size={20} color={theme.buttonPrimary} />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <BottomNav active="cart" />
     </View>
   );
 };
 
-const TimelineItem = ({
-  label,
-  sub,
-  active,
-  icon = 'checkmark-circle',
-}: {
-  label: string;
-  sub: string;
-  active?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
-}) => {
-  return (
-    <View style={styles.timelineRow}>
-      <Ionicons
-        name={active ? icon : 'radio-button-off'}
-        size={20}
-        color={active ? '#F6A600' : '#CFCFCF'}
-        style={{ marginRight: 10 }}
-      />
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.timelineLabel, { color: active ? '#111' : '#999' }]}>{label}</Text>
-        <Text style={[styles.timelineSub, { color: active ? '#555' : '#B0B0B0' }]}>{sub}</Text>
-      </View>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 54,
+    paddingTop: 80,
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  headerTitle: { fontSize: 20, fontWeight: '700' },
-  card: {
-    margin: 16,
-    borderRadius: 16,
-    backgroundColor: '#fff',
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '500',
+    color: '#181C2E',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingTop: 24,
+    paddingBottom: 160,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 1,
-    gap: 12,
+    elevation: 2,
   },
-  title: { fontSize: 16, fontWeight: '700' },
-  timeline: { gap: 10 },
-  timelineRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  timelineLabel: { fontSize: 14, fontWeight: '700' },
-  timelineSub: { fontSize: 12 },
-  mapPlaceholder: {
-    height: 200,
-    backgroundColor: '#F3F3F3',
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  timelineContainer: {
+    marginBottom: 20,
+  },
+  timelineWrapper: {
+    position: 'relative',
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 0,
+    position: 'relative',
+    zIndex: 1,
+  },
+  timelineItemLast: {
+    marginBottom: 0,
+  },
+  timelineIconContainer: {
+    alignItems: 'center',
+    marginRight: 20,
+    width: 24,
+    justifyContent: 'flex-start',
+  },
+  timelineIcon: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mapText: { fontWeight: '600' },
-  driverRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  driverName: { fontSize: 14, fontWeight: '700' },
-  helper: { fontSize: 12 },
+  timelineIconActive: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  timelineIconPending: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  timelineLine: {
+    width: 2,
+    height: 56,
+    marginTop: 0,
+    alignSelf: 'center',
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  timelineLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  timelineSub: {
+    fontSize: 12,
+  },
+  mapPlaceholder: {
+    height: 200,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  mapText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  driverSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  driverAvatar: {
+    marginRight: 12,
+  },
+  driverInfo: {
+    flex: 1,
+  },
+  driverName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  driverEta: {
+    fontSize: 14,
+  },
+  driverActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  driverActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
 });
 
 export default TrackingScreen;

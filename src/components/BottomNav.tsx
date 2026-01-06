@@ -24,93 +24,124 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
   const hasNavButtons = insets.bottom > 0;
 
   // Calculate dynamic spacing based on navigation buttons
-  const svgHeight = 82 + (hasNavButtons ? insets.bottom : 0);
-  const hexagonBottom = 30 + (hasNavButtons ? insets.bottom / 2 : 0);
-  const navBarHeight = 28 + (hasNavButtons ? insets.bottom / 2 : 0);
-  const navBarPaddingBottom = hasNavButtons ? insets.bottom : 0;
+  // Ensure nav is positioned above system navigation buttons
+  const baseNavHeight = 60; // Base height without safe area
+  const svgHeight = baseNavHeight; // SVG height without safe area - we position above system buttons
+  const hexagonBottom = 25; // Hexagon position relative to nav
+  // Increase nav bar height to accommodate icons and labels properly
+  const navBarHeight = 50;
+  const navBarPaddingBottom = 0; // No padding bottom since we're positioned above system buttons
+  const navBarPaddingTop = 8; // Add padding top to ensure visibility
 
   const iconColor = (key: TabKey) => (active === key ? theme.iconActive : theme.iconColor);
 
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.footerSvgWrapper}>
-        <SubtractBorderSvg width="100%" height={svgHeight} preserveAspectRatio="none" />
+    <>
+      {/* Orange background for system navigation buttons area */}
+      {hasNavButtons && (
+        <View style={[styles.systemButtonsBackground, { height: insets.bottom }]} />
+      )}
+      
+      <View style={[styles.wrapper, { bottom: insets.bottom }]}>
+        {/* Background color for nav area */}
+        <View style={[styles.navBackground, { height: svgHeight }]} />
+        
+        <View style={styles.footerSvgWrapper}>
+          <SubtractBorderSvg width="100%" height={svgHeight} preserveAspectRatio="none" />
+        </View>
+
+        <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
+          <TouchableOpacity>
+            <SixSideBoxSvg width={54} height={61} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.bottomNavBar, { height: navBarHeight, paddingBottom: navBarPaddingBottom, paddingTop: navBarPaddingTop }]}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+            <Ionicons name="home" size={20} color={iconColor('home')} />
+            <Text style={[styles.navLabel, { color: iconColor('home') }]}>Home</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/menu')}>
+            <Ionicons name="restaurant-outline" size={20} color={iconColor('menu')} />
+            <Text style={[styles.navLabel, { color: iconColor('menu') }]}>Menu</Text>
+          </TouchableOpacity>
+
+          <View style={styles.navItemCenter} />
+
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/cart')}>
+            <View>
+              <Ionicons name="cart-outline" size={20} color={iconColor('cart')} />
+              {cartCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: theme.buttonPrimary }]}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.navLabel, { color: iconColor('cart') }]}>Cart</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navItem}>
+            <Ionicons name="storefront-outline" size={20} color={iconColor('view')} />
+            <Text style={[styles.navLabel, { color: iconColor('view') }]}>View</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
-        <TouchableOpacity>
-          <SixSideBoxSvg width={54} height={61} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.bottomNavBar, { height: navBarHeight, paddingBottom: navBarPaddingBottom }]}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
-          <Ionicons name="home" size={24} color={iconColor('home')} />
-          <Text style={[styles.navLabel, { color: iconColor('home') }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/menu')}>
-          <Ionicons name="restaurant-outline" size={24} color={iconColor('menu')} />
-          <Text style={[styles.navLabel, { color: iconColor('menu') }]}>Menu</Text>
-        </TouchableOpacity>
-
-        <View style={styles.navItemCenter} />
-
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/cart')}>
-          <View>
-            <Ionicons name="cart-outline" size={24} color={iconColor('cart')} />
-            {cartCount > 0 && (
-              <View style={[styles.badge, { backgroundColor: theme.buttonPrimary }]}>
-                <Text style={styles.badgeText}>{cartCount}</Text>
-              </View>
-            )}
-          </View>
-          <Text style={[styles.navLabel, { color: iconColor('cart') }]}>Cart</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="storefront-outline" size={24} color={iconColor('view')} />
-          <Text style={[styles.navLabel, { color: iconColor('view') }]}>View</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
+  systemButtonsBackground: {
     position: 'absolute',
-    bottom: -10,
+    bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FB8C00', // Orange background for system buttons area
+    zIndex: 999,
+  },
+  wrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1000, // High z-index to ensure nav is always on top
+  },
+  navBackground: {
+    position: 'absolute',
+    bottom: 0, // Position at bottom of wrapper (above system buttons)
+    left: 0,
+    right: 0,
+    zIndex: 0,
   },
   footerSvgWrapper: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 1,
   },
   hexagonContainer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
   bottomNavBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center', // Center alignment for proper vertical centering
     justifyContent: 'space-between',
     paddingHorizontal: 32,
-    height: 28,
     width: '100%',
+    zIndex: 2,
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
     width: 50,
+    paddingBottom: 10,
   },
   navItemCenter: {
     width: 68,

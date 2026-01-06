@@ -134,7 +134,7 @@ const createStyles = (theme: any) =>
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 140,
+    paddingBottom: 160,
     gap: 14,
   },
   title: {

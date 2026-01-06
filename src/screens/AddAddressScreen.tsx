@@ -328,7 +328,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   formWrapper: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 140,
+    paddingBottom: 160,
   },
   mapContainer: {
     height: 180,
