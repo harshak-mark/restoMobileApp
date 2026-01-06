@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Image, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Image, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CategoryCardWithSubtitle, FoodItemCard } from '../components/FoodCards';
 import ProfileDrawer from '../components/ProfileDrawer';
 import { picksYoursData, popularItemsData } from '../data/foodItems';
@@ -198,47 +198,47 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const formatDate = (date: Date) => {
+  const formatDate = useCallback((date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  }, []);
 
-  const formatTime = (time: Date) => {
+  const formatTime = useCallback((time: Date) => {
     return time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  };
+  }, []);
 
-  const handleDateChange = (event: any, date?: Date) => {
+  const handleDateChange = useCallback((event: any, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
     if (date) {
       setSelectedDate(date);
     }
-  };
+  }, []);
 
-  const handleTimeChange = (event: any, time?: Date) => {
+  const handleTimeChange = useCallback((event: any, time?: Date) => {
     if (Platform.OS === 'android') {
       setShowTimePicker(false);
     }
     if (time) {
       setSelectedTime(time);
     }
-  };
+  }, []);
 
-  const categories = [
+  const categories = useMemo(() => [
     { id: 1, name: 'Hot Deals', icon: HotDealsIcon },
     { id: 2, name: 'Top Rating', icon: TopRatedIcon },
     { id: 3, name: 'Rewards', icon: RewardsIcon },
     { id: 4, name: 'Desserts', icon: DessertsIcon },
-  ];
+  ], []);
 
-  const handleQuantityChange = (itemId: string, quantity: number) => {
+  const handleQuantityChange = useCallback((itemId: string, quantity: number) => {
     setPicksYoursQuantities((prev) => ({
       ...prev,
       [itemId]: quantity,
     }));
-  };
+  }, []);
 
-  const handleAddToCart = (itemId: string) => {
+  const handleAddToCart = useCallback((itemId: string) => {
     const item = picksYoursData.find((foodItem) => foodItem.id === itemId);
     if (!item) {
       return;
@@ -249,19 +249,19 @@ export default function HomeScreen() {
 
     const quantity = picksYoursQuantities[itemId] || 1;
     dispatch(addItem({ item: { ...item, image: imageSource }, quantity }));
-  };
+  }, [picksYoursQuantities, dispatch]);
 
-  const visiblePicks = picksYoursData.slice(0, visiblePicksCount);
-  const hasMorePicks = visiblePicksCount < picksYoursData.length;
-  const picksCtaLabel = hasMorePicks ? 'See More' : 'See Less';
+  const visiblePicks = useMemo(() => picksYoursData.slice(0, visiblePicksCount), [visiblePicksCount]);
+  const hasMorePicks = useMemo(() => visiblePicksCount < picksYoursData.length, [visiblePicksCount]);
+  const picksCtaLabel = useMemo(() => hasMorePicks ? 'See More' : 'See Less', [hasMorePicks]);
 
-  const handleTogglePicks = () => {
+  const handleTogglePicks = useCallback(() => {
     if (hasMorePicks) {
       setVisiblePicksCount((prev) => Math.min(prev + 4, picksYoursData.length));
     } else {
       setVisiblePicksCount((prev) => Math.max(4, prev - 4));
     }
-  };
+  }, [hasMorePicks]);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
@@ -368,7 +368,7 @@ export default function HomeScreen() {
                 key={index}
                 onPress={() => setCurrentSlide(index)}
               >
-                <View style={[styles.indicator, currentSlide === index && styles.indicatorActive]} />
+                <View style={[styles.indicator, { backgroundColor: theme.divider }, currentSlide === index && { backgroundColor: theme.buttonPrimary }]} />
               </TouchableOpacity>
             ))}
           </View>
@@ -380,19 +380,20 @@ export default function HomeScreen() {
             <Text style={[styles.popularTitle, { color: theme.textPrimary }]}>
               Popular items
             </Text>
-            <TouchableOpacity style={styles.seeAllButton} onPress={() => router.push('/menu')}>
-              <Text style={styles.seeAllText}>See all</Text>
+            <TouchableOpacity style={[styles.seeAllButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => router.push('/menu')}>
+              <Text style={[styles.seeAllText, { color: theme.buttonPrimary }]}>See all</Text>
             </TouchableOpacity>
           </View>
 
           {/* Popular Items Cards */}
-          <ScrollView
+          <FlatList
+            data={popularItemsData}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.popularItemsContainer}
-          >
-            {popularItemsData.map((item) => (
-              <View key={item.id} style={styles.popularItemWrapper}>
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+              <View style={styles.popularItemWrapper}>
                 <CategoryCardWithSubtitle
                   image={item.image}
                   title={item.title}
@@ -400,8 +401,12 @@ export default function HomeScreen() {
                   onPress={() => console.log('Item pressed:', item.title)}
                 />
               </View>
-            ))}
-          </ScrollView>
+            )}
+            removeClippedSubviews={true}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            windowSize={5}
+          />
         </View>
 
         {/* Picks Yours Section */}
@@ -411,10 +416,12 @@ export default function HomeScreen() {
           </Text>
 
           {/* Picks Yours Grid */}
-          <View style={styles.picksYoursGrid}>
-            {visiblePicks.map((item, index) => (
+          <FlatList
+            data={visiblePicks}
+            numColumns={2}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item, index }) => (
               <View 
-                key={item.id} 
                 style={[
                   styles.picksYoursCardWrapper,
                   index % 2 === 0 && styles.picksYoursCardLeft,
@@ -433,8 +440,12 @@ export default function HomeScreen() {
                   onAddToCart={() => handleAddToCart(item.id)}
                 />
               </View>
-            ))}
-          </View>
+            )}
+            removeClippedSubviews={true}
+            initialNumToRender={4}
+            maxToRenderPerBatch={4}
+            windowSize={5}
+          />
 
           {picksYoursData.length > 4 && (
             <TouchableOpacity
@@ -464,11 +475,11 @@ export default function HomeScreen() {
             <Text style={styles.reserveCardSubtitle}>Discover our New Menu !</Text>
 
             {/* No of Guest Input */}
-            <View style={styles.reserveInputContainer}>
+            <View style={[styles.reserveInputContainer, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
               <TextInput
-                style={styles.reserveInput}
+                style={[styles.reserveInput, { color: theme.inputText }]}
                 placeholder="No of Guest"
-                placeholderTextColor={theme.textMuted}
+                placeholderTextColor={theme.inputPlaceholder}
                 value={reservationForm.noOfGuests}
                 onChangeText={(text) => {
                   // Only allow numbers
@@ -480,11 +491,11 @@ export default function HomeScreen() {
             </View>
 
             {/* Full Name Input */}
-            <View style={styles.reserveInputContainer}>
+            <View style={[styles.reserveInputContainer, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
               <TextInput
-                style={styles.reserveInput}
+                style={[styles.reserveInput, { color: theme.inputText }]}
                 placeholder="Full Name"
-                placeholderTextColor={theme.textMuted}
+                placeholderTextColor={theme.inputPlaceholder}
                 value={reservationForm.fullName}
                 onChangeText={(text) => {
                   // Only allow letters and spaces
@@ -497,29 +508,29 @@ export default function HomeScreen() {
             {/* Date and Time Row */}
             <View style={styles.dateTimeRow}>
               <TouchableOpacity 
-                style={[styles.reserveInputContainer, styles.dateInput]}
+                style={[styles.reserveInputContainer, styles.dateInput, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}
                 onPress={() => setShowDatePicker(true)}
               >
-                <Text style={[styles.reserveInput, !selectedDate && styles.placeholderText]}>
+                <Text style={[styles.reserveInput, { color: selectedDate ? theme.inputText : theme.inputPlaceholder }]}>
                   {selectedDate ? formatDate(selectedDate) : 'Date'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.reserveInputContainer, styles.timeInput]}
+                style={[styles.reserveInputContainer, styles.timeInput, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}
                 onPress={() => setShowTimePicker(true)}
               >
-                <Text style={[styles.reserveInput, !selectedTime && styles.placeholderText]}>
+                <Text style={[styles.reserveInput, { color: selectedTime ? theme.inputText : theme.inputPlaceholder }]}>
                   {selectedTime ? formatTime(selectedTime) : 'Time'}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Phone No Input */}
-            <View style={styles.reserveInputContainer}>
+            <View style={[styles.reserveInputContainer, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
               <TextInput
-                style={styles.reserveInput}
+                style={[styles.reserveInput, { color: theme.inputText }]}
                 placeholder="Phone No"
-                placeholderTextColor={theme.textMuted}
+                placeholderTextColor={theme.inputPlaceholder}
                 value={reservationForm.phoneNo}
                 onChangeText={(text) => {
                   // Only allow numbers, max 10 digits
@@ -861,47 +872,47 @@ export default function HomeScreen() {
                   </View>
 
                   {/* Title */}
-                  <Text style={styles.confirmationTitle}>
-                    Table Booked <Text style={styles.confirmationTitleHighlight}>Successfully</Text>
+                  <Text style={[styles.confirmationTitle, { color: theme.textPrimary }]}>
+                    Table Booked <Text style={[styles.confirmationTitleHighlight, { color: theme.buttonPrimary }]}>Successfully</Text>
                   </Text>
 
                   {/* Divider */}
-                  <View style={styles.confirmationDivider} />
+                  <View style={[styles.confirmationDivider, { backgroundColor: theme.divider }]} />
 
                   {/* User Info */}
-                  <Text style={styles.confirmationUserName}>
+                  <Text style={[styles.confirmationUserName, { color: theme.textPrimary }]}>
                     {bookingDetails.name || 'Guest'}
-                    <Text style={styles.confirmationUserPhone}>
+                    <Text style={[styles.confirmationUserPhone, { color: theme.textSecondary }]}>
                     {bookingDetails.phone ? `       +1 ${bookingDetails.phone.slice(0, 4)} ${bookingDetails.phone.slice(4, 7)} ${bookingDetails.phone.slice(7)}` : '+1 000 000 0000'}
                   </Text>
                   </Text>
                  
 
                   {/* Divider */}
-                  <View style={styles.confirmationDivider} />
+                  <View style={[styles.confirmationDivider, { backgroundColor: theme.divider }]} />
 
                   {/* Booking Details */}
                   <View style={styles.confirmationDetailsRow}>
-                    <Ionicons name="calendar-outline" size={20} color="#666" />
-                    <Text style={styles.confirmationDetailsText}>
+                    <Ionicons name="calendar-outline" size={20} color={theme.textSecondary} />
+                    <Text style={[styles.confirmationDetailsText, { color: theme.textPrimary }]}>
                       {formatDate(bookingDetails.date)} | {formatTime(bookingDetails.time)}
                     </Text>
                   </View>
                   <View style={styles.confirmationDetailsRow}>
-                    <Ionicons name="people-outline" size={20} color="#666" />
-                    <Text style={styles.confirmationDetailsText}>
+                    <Ionicons name="people-outline" size={20} color={theme.textSecondary} />
+                    <Text style={[styles.confirmationDetailsText, { color: theme.textPrimary }]}>
                       {bookingDetails.guests || '0'} Guests
                     </Text>
                   </View>
                   <View style={styles.confirmationDetailsRow}>
-                    <Ionicons name="restaurant-outline" size={20} color="#666" />
-                    <Text style={styles.confirmationDetailsText}>
+                    <Ionicons name="restaurant-outline" size={20} color={theme.textSecondary} />
+                    <Text style={[styles.confirmationDetailsText, { color: theme.textPrimary }]}>
                       No : {bookingDetails.tableId.replace('T-', '') || 'N/A'} / Indoor
                     </Text>
                   </View>
 
                   {/* Divider */}
-                  <View style={styles.confirmationDivider} />
+                  <View style={[styles.confirmationDivider, { backgroundColor: theme.divider }]} />
 
                   {/* Action Buttons */}
                   <View style={styles.confirmationButtonsRow}>
@@ -923,19 +934,19 @@ export default function HomeScreen() {
                       <Text style={[styles.confirmationDoneButtonText, { color: theme.buttonText }]}>Done</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.confirmationDownloadButton}
+                      style={[styles.confirmationDownloadButton, { backgroundColor: theme.background, borderColor: theme.textPrimary }]}
                       onPress={() => {
                         // Download pass functionality
                         console.log('Download pass');
                       }}
                     >
-                      <Ionicons name="download-outline" size={20} color="#000" />
-                      <Text style={styles.confirmationDownloadButtonText}>Download Pass</Text>
+                      <Ionicons name="download-outline" size={20} color={theme.textPrimary} />
+                      <Text style={[styles.confirmationDownloadButtonText, { color: theme.textPrimary }]}>Download Pass</Text>
                     </TouchableOpacity>
                   </View>
 
                   {/* Promotional Message */}
-                  <Text style={styles.confirmationPromoText}>
+                  <Text style={[styles.confirmationPromoText, { color: theme.textSecondary }]}>
                     Your table is reserved! Since you reserved your table with Dine in Florida, your will automatically receive 2% off your bill when you pay
                   </Text>
                 </ScrollView>

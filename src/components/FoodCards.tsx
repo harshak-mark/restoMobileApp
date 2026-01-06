@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Dimensions, Image, ImageSourcePropType, Text,
   TouchableOpacity,
@@ -29,7 +29,7 @@ export interface FoodItemCardProps {
   onAddToCart?: () => void;
 }
 
-export function FoodItemCard({
+export const FoodItemCard = React.memo(function FoodItemCard({
   image,
   title,
   description,
@@ -43,19 +43,19 @@ export function FoodItemCard({
   onAddToCart,
 }: FoodItemCardProps) {
   const { theme } = useTheme();
-  const priceText = typeof price === 'number' ? `₹${price}` : price;
+  const priceText = useMemo(() => typeof price === 'number' ? `₹${price}` : price, [price]);
 
-  const handleDecrease = () => {
+  const handleDecrease = React.useCallback(() => {
     if (quantity > 1 && onQuantityChange) {
       onQuantityChange(quantity - 1);
     }
-  };
+  }, [quantity, onQuantityChange]);
 
-  const handleIncrease = () => {
+  const handleIncrease = React.useCallback(() => {
     if (onQuantityChange) {
       onQuantityChange(quantity + 1);
     }
-  };
+  }, [onQuantityChange]);
 
   const darkBorder =
     theme.mode === 'dark'
@@ -215,7 +215,7 @@ export function FoodItemCard({
       </View>
     </View>
   );
-}
+});
 
 // ============================================
 // Type 2: Category Card (Simple with Image and Title)

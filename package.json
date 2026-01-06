@@ -3,11 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "NODE_OPTIONS='--max-old-space-size=4096' expo start",
+    "start": "cross-env NODE_OPTIONS='--max-old-space-size=4096' expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "NODE_OPTIONS='--max-old-space-size=4096' expo start --android",
-    "ios": "NODE_OPTIONS='--max-old-space-size=4096' expo start --ios",
-    "web": "NODE_OPTIONS='--max-old-space-size=4096' expo start --web",
+    "android": "cross-env NODE_OPTIONS='--max-old-space-size=4096' expo start --android",
+    "ios": "cross-env NODE_OPTIONS='--max-old-space-size=4096' expo start --ios",
+    "web": "cross-env NODE_OPTIONS='--max-old-space-size=4096' expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "react-native-svg-transformer": "^1.5.2",
