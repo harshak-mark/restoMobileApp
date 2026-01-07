@@ -14,7 +14,7 @@ const PaymentQRScanner = () => {
 
   useEffect(() => {
     if (secondsLeft <= 0) {
-      router.replace('/payment/failure');
+      router.replace('/payment/failure?method=upi&type=qr');
       return;
     }
     const timer = setTimeout(() => setSecondsLeft((prev) => prev - 1), 1000);
@@ -26,7 +26,7 @@ const PaymentQRScanner = () => {
   };
 
   const markFailed = () => {
-    router.replace('/payment/failure');
+    router.replace('/payment/failure?method=upi&type=qr');
   };
 
     return (
@@ -128,6 +128,19 @@ const styles = StyleSheet.create({
   failButtonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  cancel: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    width: '100%',
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

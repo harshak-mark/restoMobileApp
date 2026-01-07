@@ -38,15 +38,15 @@ const PaymentSuccessScreen = () => {
     <View style={styles.root}>
       <PaymentBg width="100%" height="100%" style={StyleSheet.absoluteFillObject} />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.heroCard, { backgroundColor: 'rgba(255,255,255,0.9)' }]}>
+        <View style={[styles.heroCard]}>
           <View style={[styles.iconCircle, { backgroundColor: '#FF9700' }]}>
             <Ionicons name="checkmark" size={32} color="#FFFFFF" />
           </View>
           <Text style={[styles.title, { color: '#000000' }]}>Thank You!</Text>
           <Text style={[styles.subtitle, { color: '#000000' }]}>Payment successful</Text>
-          <Text style={[styles.meta, { color: '#000000' }]}>{`Order ${orderId}`}</Text>
+          {/* <Text style={[styles.meta, { color: '#000000' }]}>{`Order ${orderId}`}</Text>
           <Text style={[styles.meta, { color: '#000000' }]}>{`Paid via ${paidVia}`}</Text>
-          <Text style={[styles.helper, { color: '#000000' }]}>View your order summary.</Text>
+          <Text style={[styles.helper, { color: '#000000' }]}>View your order summary.</Text> */}
 
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: '#FF9700' }]}
@@ -66,6 +66,7 @@ const PaymentSuccessScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     //paddingBottom: 120,
@@ -89,12 +90,12 @@ const styles = StyleSheet.create({
   heroCard: {
     alignItems: 'center',
     padding: 24,
-    borderRadius: 24,
+    //borderRadius: 24,
     width: '85%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    //shadowColor: '#000',
+    //shadowOffset: { width: 0, height: 4 },
+    //shadowOpacity: 0.08,
+    //shadowRadius: 8,
     elevation: 6,
   },
   iconCircle: {

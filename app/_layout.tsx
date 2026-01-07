@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavigationThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -16,20 +16,20 @@ import { persistor, store } from '../src/store/store';
 import { ThemeProvider as AppThemeProvider } from '../src/theme/ThemeContext';
 
 import {
-  Epilogue_400Regular,
-  Epilogue_500Medium,
+    Epilogue_400Regular,
+    Epilogue_500Medium,
 } from '@expo-google-fonts/epilogue';
 import {
-  FredokaOne_400Regular,
+    FredokaOne_400Regular,
 } from '@expo-google-fonts/fredoka-one';
 import {
-  Inter_300Light,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
+    Inter_300Light,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
 import {
-  PlayfairDisplay_400Regular,
+    PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display';
 
 const AppNavigation = ({ colorScheme }: { colorScheme: ColorSchemeName | null }) => {
@@ -55,6 +55,7 @@ const AppNavigation = ({ colorScheme }: { colorScheme: ColorSchemeName | null })
         <Stack.Screen name="settings/payment" />
         <Stack.Screen name="settings/payment/upi" />
         <Stack.Screen name="settings/payment/card" />
+        <Stack.Screen name="contact" />
       </Stack>
 
       <StatusBar style={statusBarStyle || (colorScheme === 'dark' ? 'light' : 'dark')} />

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { useAppSelector } from '../store/hooks';
 import { selectCartTotals } from '../store/slices/cartSlice';
@@ -18,6 +18,7 @@ const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }
 
 const PaymentScreen = () => {
   const { theme } = useTheme();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const cardList = useAppSelector((state) => state.payment.cardList);
   const upiList = useAppSelector((state) => state.payment.upiList);
   const totals = useAppSelector(selectCartTotals);
@@ -26,6 +27,26 @@ const PaymentScreen = () => {
   const [showCardOtp, setShowCardOtp] = useState(false);
   const [cardOtp, setCardOtp] = useState('');
   const [cardOtpError, setCardOtpError] = useState('');
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
+  const [showPaymentButtons, setShowPaymentButtons] = useState(false);
+  const [selectedUpiId, setSelectedUpiId] = useState<string | null>(null);
+
+  // Read tab from URL params
+  useEffect(() => {
+    if (params.tab && (params.tab === 'card' || params.tab === 'upi' || params.tab === 'cash')) {
+      setTab(params.tab as TabKey);
+    }
+  }, [params.tab]);
+
+  // Timer for processing modal - show buttons after 5 seconds
+  useEffect(() => {
+    if (showProcessingModal && !showPaymentButtons) {
+      const timer = setTimeout(() => {
+        setShowPaymentButtons(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showProcessingModal, showPaymentButtons]);
 
   const hasMethods = useMemo(() => {
     if (tab === 'card') return cardList.length > 0;
@@ -61,7 +82,36 @@ const PaymentScreen = () => {
       return;
     }
 
+    // UPI flow - show processing modal
+    if (tab === 'upi' && upiList.length > 0) {
+      // Use first UPI ID if available
+      setSelectedUpiId(upiList[0]?.id || null);
+      setShowProcessingModal(true);
+      setShowPaymentButtons(false);
+      return;
+    }
+
     router.push(`/payment/success?method=${tab}`);
+  };
+
+  const handlePaid = () => {
+    setShowProcessingModal(false);
+    setShowPaymentButtons(false);
+    if (selectedUpiId) {
+      router.push(`/payment/success?method=upi&upiId=${selectedUpiId}`);
+    } else {
+      router.push('/payment/success?method=upi');
+    }
+  };
+
+  const handleNotPaid = () => {
+    setShowProcessingModal(false);
+    setShowPaymentButtons(false);
+    if (selectedUpiId) {
+      router.push(`/payment/failure?method=upi&upiId=${selectedUpiId}`);
+    } else {
+      router.push('/payment/failure?method=upi');
+    }
   };
 
   const renderCardItem = (item: CardPayment) => (
@@ -284,6 +334,45 @@ const PaymentScreen = () => {
                   <Text style={[styles.otpButtonText, { color: theme.buttonText }]}>Verify</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Processing Modal */}
+      {showProcessingModal && (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setShowProcessingModal(false)}>
+          <View style={styles.otpOverlay}>
+            <View style={[styles.otpCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+              <Text style={[styles.otpTitle, { color: theme.textPrimary }]}>Redirecting to payment</Text>
+              {!showPaymentButtons ? (
+                <>
+                  <ActivityIndicator size="large" color={theme.buttonPrimary} style={styles.processingSpinner} />
+                  <Text style={[styles.otpSubtitle, { color: theme.textSecondary, marginTop: 16 }]}>
+                    You will be redirected to your bank's website. It might take a few seconds.
+                  </Text>
+                  <Text style={[styles.otpSubtitle, { color: theme.textSecondary, marginTop: 8, fontSize: 12 }]}>
+                    Please do not refresh the page or click the "Back" or "Close" button of your browser.
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <View style={styles.paymentButtonsContainer}>
+                    <TouchableOpacity
+                      style={[styles.paymentButton, { backgroundColor: theme.success }]}
+                      onPress={handlePaid}
+                    >
+                      <Text style={[styles.paymentButtonText, { color: theme.buttonText }]}>Paid</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.paymentButton, { backgroundColor: theme.error }]}
+                      onPress={handleNotPaid}
+                    >
+                      <Text style={[styles.paymentButtonText, { color: theme.buttonText }]}>Not Paid</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </Modal>
@@ -575,6 +664,24 @@ const styles = StyleSheet.create({
   },
   otpButtonText: {
     fontSize: 15,
+    fontWeight: '700',
+  },
+  processingSpinner: {
+    marginVertical: 24,
+  },
+  paymentButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  paymentButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  paymentButtonText: {
+    fontSize: 16,
     fontWeight: '700',
   },
 });

@@ -44,18 +44,21 @@ const AccountSettingsScreen = () => {
             value={emailNotif}
             onValueChange={setEmailNotif}
             themeColor={theme.buttonPrimary}
+            textColor={theme.textPrimary}
           />
           <SettingRow
             label="SMS Notifications"
             value={smsNotif}
             onValueChange={setSmsNotif}
             themeColor={theme.buttonPrimary}
+            textColor={theme.textPrimary}
           />
           <SettingRow
             label="App Alerts"
             value={appAlerts}
             onValueChange={setAppAlerts}
             themeColor={theme.buttonPrimary}
+            textColor={theme.textPrimary}
           />
         </View>
 
@@ -156,15 +159,17 @@ const SettingRow = ({
   value,
   onValueChange,
   themeColor,
+  textColor,
 }: {
   label: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
   themeColor: string;
+  textColor: string;
 }) => {
   return (
     <View style={styles.settingRow}>
-      <Text style={styles.settingLabel}>{label}</Text>
+      <Text style={[styles.settingLabel, { color: textColor }]}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onValueChange}

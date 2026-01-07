@@ -12,6 +12,7 @@ export interface UpiAccount {
 export interface CardPayment {
   id: string;
   brand: 'visa' | 'mastercard' | 'amex' | 'discover' | 'other';
+  name: string; // Cardholder name
   maskedNumber: string; // e.g., **** 1234
   expires: string; // MM/YYYY
   status: VerificationStatus;

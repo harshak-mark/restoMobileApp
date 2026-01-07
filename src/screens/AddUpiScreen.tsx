@@ -33,7 +33,9 @@ const AddUpiScreen = () => {
         status: 'verified',
       })
     );
-    if (next) {
+    if (next === '/payment') {
+      router.replace('/payment?tab=upi');
+    } else if (next) {
       router.replace(next as any);
     } else {
       router.replace('/settings/payment?tab=upi');

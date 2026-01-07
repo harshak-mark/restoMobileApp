@@ -99,7 +99,7 @@ const OrderSummaryScreen = () => {
         </View>
 
         {/* Order Details Card */}
-        <View style={[styles.orderDetailsCard, { backgroundColor: '#F5F5F5' }]}>
+        <View style={[styles.orderDetailsCard, { backgroundColor: theme.card }]}>
           <Text style={[styles.orderDetailsTitle, { color: theme.textPrimary }]}>
             Order Details
           </Text>
@@ -156,11 +156,11 @@ const OrderSummaryScreen = () => {
             {isEditingNote ? (
               <View style={styles.noteEditContainer}>
                 <TextInput
-                  style={[styles.noteInput, { color: theme.textPrimary, borderColor: theme.divider }]}
+                  style={[styles.noteInput, { color: theme.textPrimary, borderColor: theme.divider, backgroundColor: theme.inputBackground }]}
                   value={orderNote}
                   onChangeText={setOrderNote}
                   placeholder="Add a note..."
-                  placeholderTextColor={theme.textMuted}
+                  placeholderTextColor={theme.inputPlaceholder}
                   multiline
                   autoFocus
                   onSubmitEditing={handleNoteSubmit}
@@ -200,7 +200,7 @@ const OrderSummaryScreen = () => {
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.downloadButton, { borderColor: theme.textPrimary }]}
+            style={[styles.downloadButton, { borderColor: theme.divider, backgroundColor: theme.card }]}
             onPress={() => {
               // Handle download invoice
               console.log('Download invoice');
@@ -377,7 +377,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    backgroundColor: '#FFFFFF',
   },
   downloadButtonText: {
     fontSize: 12,

@@ -14,11 +14,11 @@ const TrackingScreen = () => {
       <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
         <TouchableOpacity 
           onPress={() => router.replace('/home')}
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: '#ECF0F4' }]}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color="#181C2E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live tracking</Text>
+        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Live tracking</Text>
       </View>
 
       {/* Main Card */}
@@ -27,7 +27,7 @@ const TrackingScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.card, { backgroundColor: '#F9FAFB' }]}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
           <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
             Live Order Tracking
           </Text>
@@ -41,7 +41,7 @@ const TrackingScreen = () => {
                   <View style={[styles.timelineIcon, { backgroundColor: theme.buttonPrimary }]}>
                     <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                   </View>
-                  <View style={[styles.timelineLine, { backgroundColor: '#CFCFCF' }]} />
+                  <View style={[styles.timelineLine, { backgroundColor: theme.divider }]} />
                 </View>
                 <View style={styles.timelineContent}>
                   <Text style={[styles.timelineLabel, { color: theme.textPrimary }]}>Preparing</Text>
@@ -54,10 +54,10 @@ const TrackingScreen = () => {
               {/* Out for Delivery - Active */}
               <View style={styles.timelineItem}>
                 <View style={styles.timelineIconContainer}>
-                  <View style={[styles.timelineIconActive, { borderColor: theme.buttonPrimary }]}>
-                    <View style={[styles.timelineDot, { backgroundColor: '#FFB500' }]} />
+                  <View style={[styles.timelineIconActive, { borderColor: theme.buttonPrimary, backgroundColor: theme.card }]}>
+                    <View style={[styles.timelineDot, { backgroundColor: theme.buttonPrimary }]} />
                   </View>
-                  <View style={[styles.timelineLine, { backgroundColor: '#CFCFCF' }]} />
+                  <View style={[styles.timelineLine, { backgroundColor: theme.divider }]} />
                 </View>
                 <View style={styles.timelineContent}>
                   <Text style={[styles.timelineLabel, { color: theme.textPrimary }]}>Out for Delivery</Text>
@@ -70,7 +70,7 @@ const TrackingScreen = () => {
               {/* Delivered - Pending */}
               <View style={[styles.timelineItem, styles.timelineItemLast]}>
                 <View style={styles.timelineIconContainer}>
-                  <View style={[styles.timelineIconPending, { borderColor: '#CFCFCF' }]} />
+                  <View style={[styles.timelineIconPending, { borderColor: theme.divider, backgroundColor: theme.card }]} />
                 </View>
                 <View style={styles.timelineContent}>
                   <Text style={[styles.timelineLabel, { color: theme.textSecondary }]}>Delivered</Text>
@@ -83,7 +83,7 @@ const TrackingScreen = () => {
           </View>
 
           {/* Map Placeholder */}
-          <View style={[styles.mapPlaceholder, { backgroundColor: '#D1D5DB' }]}>
+          <View style={[styles.mapPlaceholder, { backgroundColor: theme.inputBackground }]}>
             <Text style={[styles.mapText, { color: theme.textSecondary }]}>
               Mini Map Placeholder
             </Text>
@@ -100,7 +100,7 @@ const TrackingScreen = () => {
             </View>
             <View style={styles.driverActions}>
               <TouchableOpacity 
-                style={[styles.driverActionButton, { backgroundColor: '#FFFFFF' }]}
+                style={[styles.driverActionButton, { backgroundColor: theme.card }]}
                 onPress={() => {
                   // Handle call
                   console.log('Call driver');
@@ -109,7 +109,7 @@ const TrackingScreen = () => {
                 <Ionicons name="call" size={20} color={theme.buttonPrimary} />
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.driverActionButton, { backgroundColor: '#FFFFFF' }]}
+                style={[styles.driverActionButton, { backgroundColor: theme.card }]}
                 onPress={() => {
                   // Handle message
                   console.log('Message driver');
@@ -145,14 +145,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '500',
-    color: '#181C2E',
   },
   scrollView: {
     flex: 1,
@@ -211,7 +214,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    backgroundColor: '#FFFFFF',
   },
   timelineDot: {
     width: 8,
@@ -223,11 +225,10 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    backgroundColor: '#FFFFFF',
   },
   timelineLine: {
     width: 2,
-    height: 56,
+    height: 40,
     marginTop: 0,
     alignSelf: 'center',
   },

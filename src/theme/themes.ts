@@ -26,6 +26,13 @@ export const THEMES = {
     headerBackground: 'rgba(251, 140, 0, 0.2)',
     navBackground: '#FFFFFF',
     navBorder: '#F1F1F1',
+    transactionDetailsBg: '#E0E0E04D',
+    tryAnotherMethodBg: '#FFEDD5',
+    tryAnotherMethodText: '#F39C12',
+    contactSupportBg: '#DBEAFE',
+    contactSupportText: '#1D4ED8',
+    backToCheckoutBg: '#DADADA',
+    backToCheckoutText: '#374151',
   },
 
   dark: {
@@ -53,6 +60,13 @@ export const THEMES = {
     headerBackground: 'rgba(251, 140, 0, 0.15)',
     navBackground: '#1E1E1E',
     navBorder: '#333333',
+    transactionDetailsBg: 'rgba(224, 224, 224, 0.2)',
+    tryAnotherMethodBg: '#FFEDD5',
+    tryAnotherMethodText: '#F39C12',
+    contactSupportBg: '#DBEAFE',
+    contactSupportText: '#1D4ED8',
+    backToCheckoutBg: '#DADADA',
+    backToCheckoutText: '#374151',
   },
 
   orange: {
@@ -80,5 +94,12 @@ export const THEMES = {
     headerBackground: 'rgba(251, 140, 0, 0.3)',
     navBackground: '#FFFFFF',
     navBorder: '#FFE0B2',
+    transactionDetailsBg: '#E0E0E04D',
+    tryAnotherMethodBg: '#FFEDD5',
+    tryAnotherMethodText: '#F39C12',
+    contactSupportBg: '#DBEAFE',
+    contactSupportText: '#1D4ED8',
+    backToCheckoutBg: '#DADADA',
+    backToCheckoutText: '#374151',
   },
 } as const;
