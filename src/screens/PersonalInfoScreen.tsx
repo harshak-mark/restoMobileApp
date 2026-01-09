@@ -42,46 +42,62 @@ const PersonalInfoScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.headerIcon}>
-          <Ionicons name="chevron-back" size={26} color={theme.buttonText} />
+        <TouchableOpacity onPress={handleBack} style={styles.backButtonHeader}>
+          <View style={[styles.backButtonCircle, { backgroundColor: theme.background }]}>
+            <Ionicons name="chevron-back" size={22} color={theme.textPrimary} />
+          </View>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Personal Info</Text>
-        <View style={styles.headerIcon} />
+        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Personal Overview</Text>
+        <View style={styles.headerIconPlaceholder} />
       </View>
 
       <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileSection}>
-          <View style={[styles.avatarContainer, { borderColor: theme.buttonPrimary }]}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
-                <Text style={[styles.avatarInitial, { color: theme.textPrimary }]}>{initial}</Text>
-              </View>
-            )}
+        {/* Profile Summary Section */}
+        <View style={styles.profileSectionWrapper}>
+          {/* Orange Container for Image (40% width, from left) */}
+          <View style={[styles.profileImageContainer, { backgroundColor: '#FB8C00B8' }]}>
+            <View style={styles.avatarWrapper}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarPlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Text style={[styles.avatarInitial, { color: theme.textPrimary }]}>{initial}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          <View style={styles.nameBlock}>
-            <Text style={[styles.nameText, { color: theme.textPrimary }]}>{fullName}</Text>
-            <Text style={[styles.bioText, { color: theme.textMuted }]}>{bio}</Text>
+          {/* Name and Tagline (60% width, to the right) */}
+          <View style={styles.nameBlockContainer}>
+            <Text style={styles.nameText}>{fullName}</Text>
+            <Text style={styles.bioText}>{bio}</Text>
           </View>
         </View>
 
-        <InfoRow
-          icon={<Ionicons name="person-outline" size={22} color={theme.buttonPrimary} />}
-          label="FULL NAME"
-          value={fullName}
-        />
-        <InfoRow
-          icon={<Ionicons name="mail-outline" size={22} color="#4A4AF4" />}
-          label="EMAIL"
-          value={email || 'Not provided'}
-        />
-        <InfoRow
-          icon={<Ionicons name="call-outline" size={22} color="#2B9BF4" />}
-          label="PHONE NUMBER"
-          value={phone || 'Not provided'}
-        />
+        {/* Contact Information Card */}
+        <View style={[styles.infoCard, { backgroundColor: (theme as any).card || theme.background }]}>
+          <InfoRow
+            icon={<Ionicons name="person-outline" size={22} color={theme.buttonPrimary} />}
+            label="FULL NAME"
+            value={fullName}
+            showVerification={false}
+          />
+          <InfoRow
+            icon={<Ionicons name="mail-outline" size={22} color={theme.buttonPrimary} />}
+            label="EMAIL"
+            value={email || 'Not provided'}
+            verified={activeUser?.emailVerified || false}
+            showVerification={true}
+          />
+          <InfoRow
+            icon={<Ionicons name="call-outline" size={22} color={theme.buttonPrimary} />}
+            label="PHONE NUMBER"
+            value={phone || 'Not provided'}
+            verified={activeUser?.phoneVerified || false}
+            showVerification={true}
+          />
+        </View>
 
         <TouchableOpacity style={[styles.editButton, { backgroundColor: theme.buttonPrimary }]} onPress={handleEdit}>
           <Text style={[styles.editButtonText, { color: theme.buttonText }]}>Edit</Text>
@@ -97,19 +113,51 @@ const InfoRow = ({
   icon,
   label,
   value,
+  verified = false,
+  showVerification = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  verified?: boolean;
+  showVerification?: boolean;
 }) => {
   const { theme } = useTheme();
   const infoRowStyles = useMemo(() => createInfoRowStyles(theme), [theme]);
+  const isNotProvided = value === 'Not provided';
+  const shouldShowVerification = showVerification && !isNotProvided;
+
+  const handleNotVerifiedPress = () => {
+    router.push('/settings/personalinfo/editdetails');
+  };
+
   return (
-    <View style={[infoRowStyles.infoRow, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-      <View style={[infoRowStyles.iconCircle, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>{icon}</View>
-      <View style={infoRowStyles.infoTextBlock}>
+    <View style={infoRowStyles.infoRow}>
+      <View style={infoRowStyles.iconColumn}>
+        <View style={[infoRowStyles.iconCircle, { backgroundColor: '#FFFFFF' }]}>
+          {icon}
+        </View>
+      </View>
+      <View style={infoRowStyles.infoColumn}>
         <Text style={[infoRowStyles.infoLabel, { color: theme.textPrimary }]}>{label}</Text>
-        <Text style={[infoRowStyles.infoValue, { color: theme.textMuted }]}>{value}</Text>
+        <View style={infoRowStyles.valueContainer}>
+          <Text style={[infoRowStyles.infoValue, { color: '#6B6E82' }]}>{value}</Text>
+          {shouldShowVerification && (
+            verified ? (
+              <View style={infoRowStyles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={16} color={(theme as any).success || '#00C853'} />
+                <Text style={[infoRowStyles.verifiedLabel, { color: (theme as any).success || '#00C853' }]}>Verified</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[infoRowStyles.notVerifiedButton, { borderColor: theme.buttonPrimary }]}
+                onPress={handleNotVerifiedPress}
+              >
+                <Text style={[infoRowStyles.notVerifiedButtonText, { color: theme.buttonPrimary }]}>Not verified</Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
       </View>
     </View>
   );
@@ -119,43 +167,62 @@ const createInfoRowStyles = (theme: any) => StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  iconColumn: {
+    marginRight: 16,
   },
   iconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.card,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
   },
-  infoTextBlock: {
+  infoColumn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   infoLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '400',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+    color: theme.textPrimary,
   },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
+      infoValue: {
+        fontSize: 14,
+        fontWeight: '400',
+        color: '#6B6E82',
+      },
+      valueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flex: 1,
+      },
+      verifiedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginLeft: 8,
+      },
+      verifiedLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+      },
+      notVerifiedButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        borderWidth: 1,
+        marginLeft: 8,
+      },
+      notVerifiedButtonText: {
+        fontSize: 12,
+        fontWeight: '500',
+      },
 });
 
 const createStyles = (theme: any) => StyleSheet.create({
@@ -163,74 +230,112 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: 140,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingTop: 80,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 40,
   },
-  headerIcon: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
+  backButtonHeader: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  headerIconPlaceholder: {
+    width: 40,
+    height: 40,
   },
   contentContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
     paddingBottom: 140,
   },
-  profileSection: {
+  profileSectionWrapper: {
+    marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 0,
-    marginBottom: 24,
+    height: 161.2,
+    width: '100%',
   },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
+  profileImageContainer: {
+    width: '40%',
+    height: 161.2,
+    borderBottomRightRadius: 80,
+    borderTopRightRadius: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  avatarWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     overflow: 'hidden',
-    backgroundColor: theme.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  nameBlock: {
-    marginLeft: 16,
-    flex: 1,
+  nameBlockContainer: {
+    width: '60%',
+    paddingLeft: 20,
     justifyContent: 'center',
+    height: 161.2,
   },
   avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   avatarInitial: {
     fontSize: 42,
     fontWeight: '700',
   },
   nameText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
+    marginBottom: 4,
+    color: '#2C2C3A',
+    fontFamily: 'Inter_700Bold',
   },
   bioText: {
     fontSize: 14,
+    fontWeight: '400',
+    color: '#A0A5BA',
+    fontFamily: 'Inter_400Regular',
+  },
+  infoCard: {
+    marginTop: 24,
+    marginHorizontal: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: theme.shadow || '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   editButton: {
     marginTop: 24,
+    marginHorizontal: 24,
     borderRadius: 24,
     paddingVertical: 14,
     alignItems: 'center',

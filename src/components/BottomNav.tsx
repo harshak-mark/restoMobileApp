@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import SixSideBoxWhiteSvg from '../../assets/images/6sidebox-white.svg';
 import SixSideBoxSvg from '../../assets/images/6sidebox.svg';
 import SubtractBorderSvg from '../../assets/images/food/icons/Subtractborder.svg';
 import { useAppSelector } from '../store/hooks';
@@ -23,7 +22,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
   const cartCount = useAppSelector((state) => selectCartCount(state as RootState));
   const insets = useSafeAreaInsets();
   const hasNavButtons = insets.bottom > 0;
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   // Calculate dynamic spacing based on navigation buttons
   // Ensure nav is positioned above system navigation buttons
@@ -41,7 +39,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
     <>
       {/* Orange background for system navigation buttons area */}
       {hasNavButtons && (
-        <View style={[styles.systemButtonsBackground, { height: insets.bottom }]} />
+        <View style={[styles.systemButtonsBackground, { height: insets.bottom, backgroundColor: theme.buttonPrimary }]} />
       )}
       
       <View style={[styles.wrapper, { bottom: insets.bottom }]}>
@@ -52,50 +50,41 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
           <SubtractBorderSvg width="100%" height={svgHeight} preserveAspectRatio="none" />
         </View>
 
-        {/* Popup Icons - shown when popup is open */}
-        {isPopupOpen && (
-          <View style={[styles.popupContainer, { bottom: hexagonBottom + 70 }]}>
-            <TouchableOpacity style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}>
-              <Ionicons name="people-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.popupIcon, styles.popupIconMiddle, { backgroundColor: theme.buttonPrimary }]}>
-              <Ionicons name="call-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}>
-              <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+        {/* Hexagon button - only show on non-view pages */}
+        {active !== 'view' && (
+          <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
+            <TouchableOpacity style={styles.hexagonButton}>
+              <SixSideBoxSvg width={54} height={61} />
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
-          <TouchableOpacity onPress={() => setIsPopupOpen(!isPopupOpen)} style={styles.hexagonButton}>
-            {isPopupOpen ? (
-              <View style={styles.hexagonWrapper}>
-                <SixSideBoxWhiteSvg width={54} height={61} />
-                <View style={styles.iconOverlay}>
-                  <Ionicons name="close" size={24} color={theme.buttonPrimary} />
-                </View>
-              </View>
-            ) : (
-              <SixSideBoxSvg width={54} height={61} />
-            )}
-          </TouchableOpacity>
-        </View>
-
         <View style={[styles.bottomNavBar, { height: navBarHeight, paddingBottom: navBarPaddingBottom, paddingTop: navBarPaddingTop }]}>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push('/home')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Ionicons name="home" size={20} color={iconColor('home')} />
             <Text style={[styles.navLabel, { color: iconColor('home') }]}>Home</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/menu')}>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push('/menu')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Ionicons name="restaurant-outline" size={20} color={iconColor('menu')} />
             <Text style={[styles.navLabel, { color: iconColor('menu') }]}>Menu</Text>
           </TouchableOpacity>
 
           <View style={styles.navItemCenter} />
 
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/cart')}>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push('/cart')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <View>
               <Ionicons name="cart-outline" size={20} color={iconColor('cart')} />
               {cartCount > 0 && (
@@ -107,7 +96,11 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
             <Text style={[styles.navLabel, { color: iconColor('cart') }]}>Cart</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push('/view')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Ionicons name="storefront-outline" size={20} color={iconColor('view')} />
             <Text style={[styles.navLabel, { color: iconColor('view') }]}>View</Text>
           </TouchableOpacity>
@@ -123,7 +116,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FB8C00', // Orange background for system buttons area
     zIndex: 999,
   },
   wrapper: {
@@ -156,16 +148,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   hexagonButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hexagonWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconOverlay: {
-    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -205,26 +187,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     fontWeight: '600',
-  },
-  popupContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3,
-  },
-  popupIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 10,
-  },
-  popupIconMiddle: {
-    marginTop: -10, // Position phone icon slightly above the other two
   },
 });
 

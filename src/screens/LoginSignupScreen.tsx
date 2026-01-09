@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Logo from '../../assets/LOGO.svg';
+import LogoWhite from '../../assets/images/LOGOwhite.svg';
 import GoogleIcon from '../../assets/images/Google.svg';
 import LoginBg from '../../assets/images/start/loginbg.svg';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -389,7 +390,11 @@ export default function LoginSignupScreen() {
         <View style={[styles.headerTabsBackground, { backgroundColor: getBackgroundColor(theme.buttonPrimary) }]} />
         {/* Logo at top */}
         <View style={styles.logoWrapper}>
-          <Logo width={143} height={48.5} />
+          {(theme as any).mode === 'dark' ? (
+            <LogoWhite width={143} height={48.5} />
+          ) : (
+            <Logo width={143} height={48.5} />
+          )}
         </View>
         {/* Back button */}
         <TouchableOpacity

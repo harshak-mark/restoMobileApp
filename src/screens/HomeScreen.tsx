@@ -153,9 +153,11 @@ export default function HomeScreen() {
   // Get addresses from Redux
   const addresses = useAppSelector((state) => state.address.items);
   const selectedAddressId = useAppSelector((state) => state.address.selectedAddressId);
+  const defaultAddressId = useAppSelector((state) => state.address.defaultAddressId);
   
   // Find selected address
   const selectedAddress = addresses.find((addr) => addr.id === selectedAddressId) || null;
+  const isSelectedAddressDefault = selectedAddress?.id === defaultAddressId;
   
   // Auto-select first address if none selected and addresses exist
   useEffect(() => {
@@ -286,9 +288,11 @@ export default function HomeScreen() {
             </Text>
             <Ionicons name="chevron-down" size={16} color={theme.buttonText} />
           </TouchableOpacity>
-          <Text style={[styles.addressText, { color: theme.buttonText }]}>
-            {selectedAddress ? formatAddress(selectedAddress) : 'XXXXX ,XXXX XXXXXX'}
-          </Text>
+          <View style={styles.addressTextContainer}>
+            <Text style={[styles.addressText, { color: theme.buttonText }]}>
+              {selectedAddress ? formatAddress(selectedAddress) : 'XXXXX ,XXXX XXXXXX'}
+            </Text>
+          </View>
         </View>
 
         {/* Notifications and Profile */}

@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ContactusbgSvg from '../../assets/images/Contactusbg.svg';
 import PhoneSvg from '../../assets/images/phone.svg';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../theme/useTheme';
@@ -15,24 +17,58 @@ const ContactScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('+1 012 3456 789');
   const [selectedSubject, setSelectedSubject] = useState<SubjectType>('general');
   const [message, setMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [validationError, setValidationError] = useState('');
+
+  const validateForm = () => {
+    if (!firstName.trim()) {
+      return 'First name is required';
+    }
+    if (!email.trim() && !phoneNumber.trim()) {
+      return 'Email or phone number is required';
+    }
+    if (!selectedSubject) {
+      return 'Please select a subject';
+    }
+    return null;
+  };
 
   const handleSendMessage = () => {
+    const error = validateForm();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    setValidationError('');
     // Handle send message logic
     console.log('Sending message:', { firstName, email, phoneNumber, selectedSubject, message });
+    setShowSuccessModal(true);
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    router.replace('/home');
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.background }]}>
+    <View style={styles.root}>
+      {/* Background SVG */}
+      <View style={styles.backgroundContainer}>
+        <ContactusbgSvg 
+          style={styles.backgroundSvg}
+        />
+      </View>
+
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.buttonPrimary }]}>
+      <View style={[styles.header, { backgroundColor: theme.buttonPrimary, zIndex: 1 }]}>
         <TouchableOpacity
           onPress={() => router.replace('/settings')}
           style={styles.backButton}
         >
-          <View style={[styles.backButtonCircle, { backgroundColor: '#ECF0F4' }]}>
-            <Ionicons name="chevron-back" size={22} color="#181C2E" />
+          <View style={[styles.backButtonCircle, { backgroundColor: theme.background }]}>
+            <Ionicons name="chevron-back" size={22} color={theme.textPrimary} />
           </View>
-          <Text style={[styles.backButtonText, { color: theme.buttonText }]}>About us</Text>
+          <Text style={[styles.backButtonText, { color: theme.buttonText }]}>Contact us</Text>
         </TouchableOpacity>
       </View>
 
@@ -40,6 +76,7 @@ const ContactScreen = () => {
         contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        style={styles.scrollView}
       >
         {/* Title Section */}
         <View style={styles.titleSection}>
@@ -257,6 +294,13 @@ const ContactScreen = () => {
             />
           </View>
 
+          {/* Validation Error */}
+          {validationError ? (
+            <View style={styles.errorContainer}>
+              <Text style={[styles.errorText, { color: theme.error }]}>{validationError}</Text>
+            </View>
+          ) : null}
+
           {/* Send Message Button */}
           <TouchableOpacity
             style={[styles.sendButton, { backgroundColor: theme.buttonPrimary }]}
@@ -267,6 +311,39 @@ const ContactScreen = () => {
         </View>
       </ScrollView>
 
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseSuccessModal}
+      >
+        <View style={styles.modalOverlay}>
+          <LinearGradient
+            colors={['#E76F00', '#FFEB34']}
+            locations={[0.2208, 1.0956]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.successModalContainer}
+          >
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.successCloseButton}
+              onPress={handleCloseSuccessModal}
+            >
+              <Ionicons name="close" size={20} color="#FB8C00" />
+            </TouchableOpacity>
+
+            {/* Success Message */}
+            <View style={styles.successMessageContainer}>
+              <Text style={styles.successMessageLine}>Your Message</Text>
+              <Text style={styles.successMessageLine}>Submitted</Text>
+              <Text style={styles.successMessageLine}>Successfully</Text>
+            </View>
+          </LinearGradient>
+        </View>
+      </Modal>
+
       <BottomNav active="home" />
     </View>
   );
@@ -275,6 +352,18 @@ const ContactScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  backgroundSvg: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  scrollView: {
+    zIndex: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -465,6 +554,53 @@ const styles = StyleSheet.create({
   sendButtonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successModalContainer: {
+    width: '90%',
+    maxWidth: 400,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  successCloseButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFE194',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  successMessageContainer: {
+    padding: 32,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  successMessageLine: {
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    textAlign: 'left',
+    marginBottom: 20,
   },
 });
 

@@ -3,6 +3,7 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useTheme } from '../src/theme/useTheme';
 
 import Logo from '../assets/LOGO.svg';
+import LogoWhite from '../assets/images/LOGOwhite.svg';
 import GirlFaceBg from '../assets/images/start/girlfacebg.svg';
 import LoginBg from '../assets/images/start/loginbg.svg';
 
@@ -10,12 +11,17 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function LandingScreen() {
   const { theme } = useTheme();
+  const isDarkTheme = (theme as any).mode === 'dark';
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: theme.background }]}>
       {/* Logo */}
       <View style={styles.logoWrapper}>
-        <Logo width={143} height={48.5} />
+        {isDarkTheme ? (
+          <LogoWhite width={143} height={48.5} />
+        ) : (
+          <Logo width={143} height={48.5} />
+        )}
       </View>
 
       {/* Background starts BELOW logo */}
@@ -54,7 +60,7 @@ export default function LandingScreen() {
           </TouchableOpacity>
 
           {/* Bottom translucent background */}
-          <View style={styles.bottomBg} />
+          <View style={[styles.bottomBg, { backgroundColor: `${theme.buttonPrimary}80` }]} />
         </View>
       </View>
     </View>
@@ -64,12 +70,11 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
 
   logoWrapper: {
     alignItems: 'center',
-    marginTop: SCREEN_HEIGHT * 0.06,
+    marginTop: SCREEN_HEIGHT * 0.10,
     marginBottom: SCREEN_HEIGHT * 0.02,
   },
 
@@ -134,7 +139,6 @@ bottomBg: {
   bottom: 0,
   width: '100%',
   height: SCREEN_HEIGHT * 0.22,   // controls semicircle height
-  backgroundColor: '#FB8C0080',
   borderTopLeftRadius: SCREEN_HEIGHT * 0.22,
   borderTopRightRadius: SCREEN_HEIGHT * 0.22,
 },

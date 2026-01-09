@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import BottomNav from '../components/BottomNav';
-import { useAppDispatch } from '../store/hooks';
-import { addCard } from '../store/slices/paymentSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addCard, updateCard } from '../store/slices/paymentSlice';
 import { useTheme } from '../theme/useTheme';
 
 const CARD_BRANDS = ['visa', 'mastercard', 'discover', 'amex'];
@@ -13,13 +13,17 @@ const CARD_BRANDS = ['visa', 'mastercard', 'discover', 'amex'];
 const AddCardScreen = () => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const params = useLocalSearchParams<{ next?: string }>();
+  const params = useLocalSearchParams<{ next?: string; from?: string; edit?: string; cardId?: string; brand?: string; name?: string; number?: string; expires?: string }>();
   const pathname = usePathname();
   const next = (params.next as string | undefined) || undefined;
+  const from = params.from;
   const dispatch = useAppDispatch();
+  const cardList = useAppSelector((state) => state.payment.cardList);
   
   // Check if we're coming from settings flow
-  const isFromSettings = pathname?.includes('/settings/payment');
+  const isFromSettings = pathname?.includes('/settings/payment') || from === 'settings';
+  const isEditMode = params.edit === 'true';
+  const editCardId = params.cardId;
 
   const [brand, setBrand] = useState<'visa' | 'mastercard' | 'amex' | 'discover' | 'other'>('visa');
   const [name, setName] = useState('');
@@ -27,6 +31,96 @@ const AddCardScreen = () => {
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [errors, setErrors] = useState<{ name?: string; number?: string; expiry?: string; cvv?: string }>({});
+  const initializedRef = useRef(false);
+
+  // Pre-fill form if editing (only run once when entering edit mode)
+  useEffect(() => {
+    if (isEditMode && editCardId && !initializedRef.current) {
+      const cardToEdit = cardList.find((card) => card.id === editCardId);
+      if (cardToEdit) {
+        setBrand(cardToEdit.brand);
+        setName(cardToEdit.name);
+        // Extract numbers from masked number (e.g., "**** 1234" -> "1234")
+        const digits = cardToEdit.maskedNumber.replace(/\D/g, '');
+        if (digits.length >= 4) {
+          // Show masked format for editing - user can edit from here
+          setNumber(formatCardNumber(digits));
+        }
+        setExpiry(cardToEdit.expires);
+        // CVV is not stored, so leave it empty
+        initializedRef.current = true;
+      } else if (params.brand && params.name && params.number && params.expires) {
+        // Fallback to URL params if card not found in store
+        setBrand(params.brand as any);
+        setName(decodeURIComponent(params.name));
+        setNumber(formatCardNumber(params.number.replace(/\D/g, '')));
+        setExpiry(params.expires);
+        initializedRef.current = true;
+      }
+    }
+    // Reset initialization flag when not in edit mode
+    if (!isEditMode) {
+      initializedRef.current = false;
+    }
+  }, [isEditMode, editCardId, cardList, params]);
+
+  // Format card number with spaces every 4 digits
+  const formatCardNumber = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    const formatted = cleaned.replace(/(.{4})/g, '$1 ').trim();
+    return formatted.slice(0, 19); // Max 16 digits + 3 spaces
+  };
+
+  const handleCardNumberChange = (text: string) => {
+    const formatted = formatCardNumber(text);
+    setNumber(formatted);
+    // Clear number error when user starts typing
+    if (errors.number) {
+      setErrors((prev) => ({ ...prev, number: undefined }));
+    }
+  };
+
+  const validateExpiryDate = (expiryValue: string): boolean => {
+    const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+    if (!expiryRegex.test(expiryValue)) {
+      return false;
+    }
+    
+    const [month, year] = expiryValue.split('/');
+    const expiryDate = new Date(2000 + parseInt(year, 10), parseInt(month, 10) - 1);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return expiryDate >= today;
+  };
+
+  const handleExpiryChange = (text: string) => {
+    let formatted = text.replace(/[^0-9/]/g, '');
+    
+    // Auto-add slash after 2 digits
+    if (formatted.length === 2 && !formatted.includes('/')) {
+      formatted = formatted + '/';
+    }
+    
+    formatted = formatted.slice(0, 5);
+    setExpiry(formatted);
+    
+    // Validate expiry date
+    if (formatted.length === 5) {
+      if (!validateExpiryDate(formatted)) {
+        const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+        if (expiryRegex.test(formatted)) {
+          setErrors((prev) => ({ ...prev, expiry: 'Card expired' }));
+        } else {
+          setErrors((prev) => ({ ...prev, expiry: 'Use MM/YY' }));
+        }
+      } else {
+        setErrors((prev) => ({ ...prev, expiry: undefined }));
+      }
+    } else {
+      setErrors((prev) => ({ ...prev, expiry: undefined }));
+    }
+  };
 
   const maskedNumber = () => {
     const digits = number.replace(/\D/g, '');
@@ -44,11 +138,23 @@ const AddCardScreen = () => {
     if (numberDigits.length !== 16) nextErrors.number = 'Card number must be 16 digits';
 
     const expiryClean = expiry.replace(/[^0-9/]/g, '').slice(0, 5);
-    const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
-    if (!expiryRegex.test(expiryClean)) nextErrors.expiry = 'Use MM/YY';
+    if (!validateExpiryDate(expiryClean)) {
+      const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+      if (expiryRegex.test(expiryClean)) {
+        nextErrors.expiry = 'Card expired';
+      } else {
+        nextErrors.expiry = 'Use MM/YY';
+      }
+    }
 
     const cvvDigits = cvv.replace(/\D/g, '');
-    if (cvvDigits.length !== 3) nextErrors.cvv = 'CVV must be 3 digits';
+    // CVV validation only required when adding new card, not when editing
+    if (!isEditMode && cvvDigits.length !== 3) {
+      nextErrors.cvv = 'CVV must be 3 digits';
+    } else if (isEditMode && cvvDigits.length > 0 && cvvDigits.length !== 3) {
+      // If CVV is entered in edit mode, it must be valid (but it's optional)
+      nextErrors.cvv = 'CVV must be 3 digits';
+    }
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -57,19 +163,69 @@ const AddCardScreen = () => {
 
     setErrors({});
 
-    dispatch(
-      addCard({
-        brand,
-        name: nameLetters,
-        maskedNumber: maskedNumber(),
-        expires: expiryClean,
-        status: 'verified',
-      })
-    );
+    if (isEditMode && editCardId) {
+      // Update existing card
+      dispatch(
+        updateCard({
+          id: editCardId,
+          brand,
+          name: nameLetters,
+          maskedNumber: maskedNumber(),
+          expires: expiryClean,
+          status: 'verified',
+        })
+      );
+    } else {
+      // Add new card
+      dispatch(
+        addCard({
+          brand,
+          name: nameLetters,
+          maskedNumber: maskedNumber(),
+          expires: expiryClean,
+          status: 'verified',
+        })
+      );
+    }
     
-    // Navigate to /payment after saving card
-    router.replace('/payment');
+    // Navigate based on where we came from
+    if (from === 'settings') {
+      // Always return to Save Payment Method when from settings
+      router.replace('/settings/payment?tab=card&from=settings');
+    } else if (isFromSettings) {
+      router.replace('/settings/payment?tab=card');
+    } else if (next && next !== '/payment') {
+      router.replace(next as any);
+    } else {
+      router.replace('/settings/payment?tab=card');
+    }
   };
+
+    // Check if all required fields are filled and valid
+    // In edit mode, CVV is optional since it's not stored
+    const isFormValid = () => {
+      const nameLetters = name.replace(/[^a-zA-Z\s]/g, '').trim();
+      const numberDigits = number.replace(/\D/g, '');
+      const expiryClean = expiry.replace(/[^0-9/]/g, '').slice(0, 5);
+      const cvvDigits = cvv.replace(/\D/g, '');
+      
+      if (isEditMode) {
+        // For edit mode, CVV is optional
+        return (
+          nameLetters.length > 0 &&
+          numberDigits.length === 16 &&
+          validateExpiryDate(expiryClean)
+        );
+      } else {
+        // For new cards, CVV is required
+        return (
+          nameLetters.length > 0 &&
+          numberDigits.length === 16 &&
+          validateExpiryDate(expiryClean) &&
+          cvvDigits.length === 3
+        );
+      }
+    };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -129,7 +285,7 @@ const AddCardScreen = () => {
           placeholder="xxxx xxxx xxxx xxxx"
           placeholderTextColor={theme.textMuted}
           value={number}
-          onChangeText={(txt) => setNumber(txt.replace(/[^0-9\s]/g, ''))}
+          onChangeText={handleCardNumberChange}
           keyboardType="number-pad"
           maxLength={19}
         />
@@ -143,7 +299,7 @@ const AddCardScreen = () => {
               placeholder="MM/YY"
               placeholderTextColor={theme.textMuted}
               value={expiry}
-              onChangeText={(txt) => setExpiry(txt.replace(/[^0-9/]/g, ''))}
+              onChangeText={handleExpiryChange}
               keyboardType="numbers-and-punctuation"
               maxLength={5}
             />
@@ -165,14 +321,18 @@ const AddCardScreen = () => {
           </View>
         </View>
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.verifyButton, { backgroundColor: theme.buttonPrimary }]}>
-            <Text style={[styles.verifyText, { color: theme.buttonText }]}>Verify</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={[styles.saveButton, { backgroundColor: theme.buttonPrimary }]} onPress={handleSave}>
-          <Text style={[styles.saveText, { color: theme.buttonText }]}>Save</Text>
+        <TouchableOpacity 
+          style={[
+            styles.saveButton, 
+            { 
+              backgroundColor: theme.buttonPrimary,
+              opacity: isFormValid() ? 1 : 0.5,
+            }
+          ]} 
+          onPress={handleSave}
+          disabled={!isFormValid()}
+        >
+          <Text style={[styles.saveText, { color: theme.buttonText }]}>{isEditMode ? 'Update' : 'Save'}</Text>
         </TouchableOpacity>
       </ScrollView>
 

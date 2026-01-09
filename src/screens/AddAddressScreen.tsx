@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import BottomNav from '../components/BottomNav';
-import { useAppDispatch } from '../store/hooks';
-import { addAddress, AddressLabel } from '../store/slices/addressSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addAddress, AddressLabel, updateAddress } from '../store/slices/addressSlice';
 import { useTheme } from '../theme/useTheme';
 
 const LABELS: AddressLabel[] = ['Home', 'Work', 'Other'];
@@ -14,8 +14,14 @@ const LABELS: AddressLabel[] = ['Home', 'Work', 'Other'];
 const AddAddressScreen = () => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const params = useLocalSearchParams<{ next?: string }>();
+  const params = useLocalSearchParams<{ next?: string; edit?: string; addressId?: string; address?: string; city?: string; pinCode?: string; landmark?: string; label?: string; from?: string }>();
   const dispatch = useAppDispatch();
+  const addresses = useAppSelector((state) => state.address.items);
+
+  const isEditMode = params.edit === 'true';
+  const editAddressId = params.addressId;
+  const from = params.from;
+  const initializedRef = useRef(false);
 
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -26,6 +32,36 @@ const AddAddressScreen = () => {
   const [cityQuery, setCityQuery] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
   const isWeb = Platform.OS === 'web';
+
+  // Pre-fill form if editing (only run once when entering edit mode)
+  useEffect(() => {
+    if (isEditMode && editAddressId && !initializedRef.current) {
+      const addressToEdit = addresses.find((addr) => addr.id === editAddressId);
+      if (addressToEdit) {
+        setAddress(addressToEdit.address);
+        setCity(addressToEdit.city);
+        setCityQuery('');
+        setPinCode(addressToEdit.pinCode);
+        setLandmark(addressToEdit.landmark || '');
+        setLabel(addressToEdit.label);
+        setCoords(addressToEdit.coords || null);
+        initializedRef.current = true;
+      } else if (params.address && params.city && params.pinCode) {
+        // Fallback to URL params if address not found in store
+        setAddress(decodeURIComponent(params.address));
+        setCity(decodeURIComponent(params.city));
+        setCityQuery('');
+        setPinCode(params.pinCode);
+        setLandmark(params.landmark ? decodeURIComponent(params.landmark) : '');
+        setLabel((params.label as AddressLabel) || 'Home');
+        initializedRef.current = true;
+      }
+    }
+    // Reset initialization flag when not in edit mode
+    if (!isEditMode) {
+      initializedRef.current = false;
+    }
+  }, [isEditMode, editAddressId, addresses, params]);
 
   useEffect(() => {
     if (isWeb && !coords) {
@@ -67,21 +103,44 @@ const AddAddressScreen = () => {
       setPinError('Enter a valid pincode for the selected city');
       return;
     }
-    dispatch(
-      addAddress({
-        address,
-        city: cityValue,
-        pinCode,
-        landmark,
-        label,
-        coords: coords || { lat: 0, lng: 0 },
-      })
-    );
-    const next = params.next as string | undefined;
-    if (next) {
-      router.replace(next as any);
+
+    if (isEditMode && editAddressId) {
+      // Update existing address
+      dispatch(
+        updateAddress({
+          id: editAddressId,
+          address,
+          city: cityValue,
+          pinCode,
+          landmark,
+          label,
+          coords: coords || { lat: 0, lng: 0 },
+        })
+      );
     } else {
-      router.replace('/settings');
+      // Add new address
+      dispatch(
+        addAddress({
+          address,
+          city: cityValue,
+          pinCode,
+          landmark,
+          label,
+          coords: coords || { lat: 0, lng: 0 },
+        })
+      );
+    }
+
+    // Navigate based on where we came from
+    if (from === 'settings') {
+      router.replace('/settings/delivery-address?from=settings');
+    } else {
+      const next = params.next as string | undefined;
+      if (next) {
+        router.replace(next as any);
+      } else {
+        router.replace('/settings');
+      }
     }
   };
 
@@ -140,7 +199,7 @@ const AddAddressScreen = () => {
         >
           <Ionicons name="chevron-back" size={26} color={theme.buttonText} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Add Address</Text>
+        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>{isEditMode ? 'Edit Address' : 'Add Address'}</Text>
         <View style={styles.headerIcon} />
       </View>
 
@@ -264,7 +323,7 @@ const AddAddressScreen = () => {
         </View>
 
         <TouchableOpacity style={[styles.saveButton, { backgroundColor: theme.buttonPrimary }]} onPress={handleSave}>
-          <Text style={[styles.saveButtonText, { color: theme.buttonText }]}>Save location</Text>
+          <Text style={[styles.saveButtonText, { color: theme.buttonText }]}>{isEditMode ? 'Update' : 'Save location'}</Text>
         </TouchableOpacity>
       </ScrollView>
 

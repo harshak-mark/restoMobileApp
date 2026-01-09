@@ -9,8 +9,8 @@ import {
   View
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
-import { useAppSelector } from '../store/hooks';
-import { Address } from '../store/slices/addressSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { Address, setSelectedAddress } from '../store/slices/addressSlice';
 import { selectCartTotals } from '../store/slices/cartSlice';
 import { useTheme } from '../theme/useTheme';
 
@@ -27,11 +27,13 @@ const timeSlots = ['9/20', '10/20', '11/20'];
 export default function CheckoutFlowScreen() {
   const { theme } = useTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const dispatch = useAppDispatch();
   const totals = useAppSelector(selectCartTotals);
   const addresses = useAppSelector((state) => state.address.items);
+  const defaultAddressId = useAppSelector((state) => state.address.defaultAddressId);
 
   const [activeTab, setActiveTab] = useState<TabKey>('delivery');
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(addresses[0]?.id || null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(defaultAddressId || null);
   const [selectedSlot, setSelectedSlot] = useState<string>(timeSlots[1]);
 
   const addressList = useMemo(() => {
@@ -42,15 +44,32 @@ export default function CheckoutFlowScreen() {
   useEffect(() => {
     if (addressList.length === 0) {
       setSelectedAddressId(null);
+      dispatch(setSelectedAddress(null));
     } else if (!selectedAddressId) {
-      setSelectedAddressId(addressList[0].id);
+      // Use default address if available, otherwise use first address
+      const addressToSelect = defaultAddressId && addressList.some((addr) => addr.id === defaultAddressId)
+        ? defaultAddressId
+        : addressList[0].id;
+      setSelectedAddressId(addressToSelect);
+      dispatch(setSelectedAddress(addressToSelect));
     }
-  }, [addressList, selectedAddressId]);
+  }, [addressList, selectedAddressId, defaultAddressId, dispatch]);
+
+  // Update selected address when default changes
+  useEffect(() => {
+    if (defaultAddressId && addressList.some((addr) => addr.id === defaultAddressId)) {
+      if (!selectedAddressId || selectedAddressId === defaultAddressId) {
+        setSelectedAddressId(defaultAddressId);
+        dispatch(setSelectedAddress(defaultAddressId));
+      }
+    }
+  }, [defaultAddressId, addressList, selectedAddressId, dispatch]);
 
   const formatCurrency = (value: number) => `₹${value.toFixed(2)}`;
 
   const renderAddressCard = (address: Address) => {
     const isSelected = selectedAddressId === address.id;
+    const isDefault = address.id === defaultAddressId;
     return (
       <TouchableOpacity
         key={address.id}
@@ -58,7 +77,10 @@ export default function CheckoutFlowScreen() {
           styles.addressCard,
           { borderColor: isSelected ? theme.buttonPrimary : theme.divider, backgroundColor: theme.background },
         ]}
-        onPress={() => setSelectedAddressId(address.id)}
+        onPress={() => {
+          setSelectedAddressId(address.id);
+          dispatch(setSelectedAddress(address.id));
+        }}
         activeOpacity={0.9}
       >
         <View style={styles.addressRow}>
@@ -68,6 +90,12 @@ export default function CheckoutFlowScreen() {
             color={isSelected ? theme.buttonPrimary : theme.textSecondary}
           />
           <Text style={[styles.addressLabel, { color: theme.textPrimary }]}>{address.label}</Text>
+          {isDefault && (
+            <View style={[styles.defaultBadge, { backgroundColor: (theme as any).success || '#00C853' }]}>
+              <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+              <Text style={styles.defaultBadgeText}>Default</Text>
+            </View>
+          )}
         </View>
         <Text style={[styles.addressText, { color: theme.textSecondary }]} numberOfLines={2}>
           {address.address} , {address.city} - {address.pinCode}
@@ -413,6 +441,21 @@ const createStyles = (theme: any) =>
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
+  },
+  defaultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 'auto',
+  },
+  defaultBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   addressLabel: {
     fontSize: 15,

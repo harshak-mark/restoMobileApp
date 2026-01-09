@@ -26,11 +26,26 @@ export const styles = StyleSheet.create({
     marginLeft: 8,
     marginRight: 4,
   },
+  addressTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 28,
+    gap: 8,
+  },
   addressText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     color: '#666',
-    marginLeft: 28,
+    flex: 1,
+  },
+  defaultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  defaultBadgeText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
   headerRight: {
     marginTop:40,

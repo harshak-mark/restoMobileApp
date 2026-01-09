@@ -14,6 +14,8 @@ const OrderSummaryScreen = () => {
   const cartItems = useAppSelector(selectCartItems);
   const orders = useAppSelector((state) => state.orders.list);
   const addresses = useAppSelector((state) => state.address.items);
+  const defaultAddressId = useAppSelector((state) => state.address.defaultAddressId);
+  const selectedAddressId = useAppSelector((state) => state.address.selectedAddressId);
   
   // Get items from most recent order if cart is empty, otherwise use cart items
   const items = useMemo(() => {
@@ -31,7 +33,18 @@ const OrderSummaryScreen = () => {
   const [orderNote, setOrderNote] = useState<string>('');
   const [isEditingNote, setIsEditingNote] = useState(false);
 
-  const primaryAddress = addresses[0];
+  // Use selected address if available, otherwise use default address, otherwise first address
+  const primaryAddress = useMemo(() => {
+    if (selectedAddressId) {
+      const selected = addresses.find((addr) => addr.id === selectedAddressId);
+      if (selected) return selected;
+    }
+    if (defaultAddressId) {
+      const defaultAddr = addresses.find((addr) => addr.id === defaultAddressId);
+      if (defaultAddr) return defaultAddr;
+    }
+    return addresses[0] || null;
+  }, [addresses, selectedAddressId, defaultAddressId]);
   const orderId = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();

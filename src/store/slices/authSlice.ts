@@ -9,6 +9,8 @@ export interface User {
   fullName?: string;
   bio?: string;
   avatarUrl?: string;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
 }
 
 export interface RegisteredUser {
@@ -21,6 +23,8 @@ export interface RegisteredUser {
   fullName?: string;
   bio?: string;
   avatarUrl?: string;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
   createdAt: string;
 }
 
@@ -249,6 +253,8 @@ const authSlice = createSlice({
           fullName: user.fullName,
           bio: user.bio,
           avatarUrl: user.avatarUrl,
+          emailVerified: user.emailVerified,
+          phoneVerified: user.phoneVerified,
         };
         state.isAuthenticated = true;
       }

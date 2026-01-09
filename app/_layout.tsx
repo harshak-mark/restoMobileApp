@@ -27,6 +27,7 @@ import {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import {
     PlayfairDisplay_400Regular,
@@ -56,6 +57,8 @@ const AppNavigation = ({ colorScheme }: { colorScheme: ColorSchemeName | null })
         <Stack.Screen name="settings/payment/upi" />
         <Stack.Screen name="settings/payment/card" />
         <Stack.Screen name="contact" />
+        <Stack.Screen name="view" />
+        <Stack.Screen name="aboutus" />
       </Stack>
 
       <StatusBar style={statusBarStyle || (colorScheme === 'dark' ? 'light' : 'dark')} />
@@ -71,6 +74,7 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
     FredokaOne_400Regular,
     Epilogue_400Regular,
     Epilogue_500Medium,

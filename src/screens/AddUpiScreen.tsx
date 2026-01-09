@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import BottomNav from '../components/BottomNav';
-import { useAppDispatch } from '../store/hooks';
-import { addUpi } from '../store/slices/paymentSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addUpi, updateUpi } from '../store/slices/paymentSlice';
 import { useTheme } from '../theme/useTheme';
 
 const PROVIDERS = [
@@ -17,25 +17,100 @@ const PROVIDERS = [
 const AddUpiScreen = () => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const params = useLocalSearchParams<{ next?: string }>();
+  const params = useLocalSearchParams<{ next?: string; from?: string; edit?: string; upiId?: string; provider?: string; upiIdValue?: string }>();
+  const pathname = usePathname();
   const next = (params.next as string | undefined) || undefined;
+  const from = params.from;
   const dispatch = useAppDispatch();
+  const upiList = useAppSelector((state) => state.payment.upiList);
+  
+  // Check if we're coming from settings flow
+  const isFromSettings = pathname?.includes('/settings/payment') || from === 'settings';
+  const isEditMode = params.edit === 'true';
+  const editUpiId = params.upiId;
 
   const [provider, setProvider] = useState<'gpay' | 'phonepe' | 'paytm' | 'other'>('gpay');
   const [upiId, setUpiId] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const initializedRef = useRef(false);
+
+  // Pre-fill form if editing (only run once when entering edit mode)
+  useEffect(() => {
+    if (isEditMode && editUpiId && !initializedRef.current) {
+      const upiToEdit = upiList.find((upi) => upi.id === editUpiId);
+      if (upiToEdit) {
+        setProvider(upiToEdit.provider);
+        setUpiId(upiToEdit.upiId);
+        setIsVerified(upiToEdit.status === 'verified');
+        initializedRef.current = true;
+      } else if (params.provider && params.upiIdValue) {
+        // Fallback to URL params if UPI not found in store
+        setProvider(params.provider as any);
+        setUpiId(decodeURIComponent(params.upiIdValue));
+        initializedRef.current = true;
+      }
+    }
+    // Reset initialization flag when not in edit mode
+    if (!isEditMode) {
+      initializedRef.current = false;
+    }
+  }, [isEditMode, editUpiId, upiList, params]);
+  
+  // Reset verification if UPI ID changes while editing
+  useEffect(() => {
+    if (isEditMode && editUpiId && initializedRef.current) {
+      const upiToEdit = upiList.find((upi) => upi.id === editUpiId);
+      if (upiToEdit && upiId !== '' && upiId !== upiToEdit.upiId) {
+        // UPI ID was changed, allow reverification
+        setIsVerified(false);
+      }
+    }
+  }, [upiId, isEditMode, editUpiId, upiList]);
+
+  const handleVerify = () => {
+    if (!upiId.trim()) return;
+    
+    setIsVerifying(true);
+    
+    // Show loading for 5 seconds
+    setTimeout(() => {
+      setIsVerifying(false);
+      setIsVerified(true);
+    }, 5000);
+  };
 
   const handleSave = () => {
-    if (!upiId.trim()) return;
-    dispatch(
-      addUpi({
-        provider,
-        upiId: upiId.trim(),
-        status: 'verified',
-      })
-    );
-    if (next === '/payment') {
-      router.replace('/payment?tab=upi');
-    } else if (next) {
+    if (!upiId.trim() || !isVerified) return;
+    
+    if (isEditMode && editUpiId) {
+      // Update existing UPI
+      dispatch(
+        updateUpi({
+          id: editUpiId,
+          provider,
+          upiId: upiId.trim(),
+          status: 'verified',
+        })
+      );
+    } else {
+      // Add new UPI
+      dispatch(
+        addUpi({
+          provider,
+          upiId: upiId.trim(),
+          status: 'verified',
+        })
+      );
+    }
+    
+    // Navigate based on where we came from
+    if (from === 'settings') {
+      // Always return to Save Payment Method when from settings
+      router.replace('/settings/payment?tab=upi&from=settings');
+    } else if (isFromSettings) {
+      router.replace('/settings/payment?tab=upi');
+    } else if (next && next !== '/payment') {
       router.replace(next as any);
     } else {
       router.replace('/settings/payment?tab=upi');
@@ -96,15 +171,46 @@ const AddUpiScreen = () => {
         />
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.verifyButton, { backgroundColor: theme.buttonPrimary }]}>
-            <Text style={[styles.verifyText, { color: theme.buttonText }]}>Verify</Text>
-          </TouchableOpacity>
+          {isVerified ? (
+            <View style={styles.verifiedContainer}>
+              <Ionicons name="checkmark-circle" size={20} color={(theme as any).success || '#00C853'} />
+              <Text style={[styles.verifiedText, { color: (theme as any).success || '#00C853' }]}>Verified</Text>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={[styles.verifyButton, { backgroundColor: theme.buttonPrimary }]}
+              onPress={handleVerify}
+              disabled={!upiId.trim() || isVerifying}
+            >
+              <Text style={[styles.verifyText, { color: theme.buttonText }]}>Verify</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <TouchableOpacity style={[styles.saveButton, { backgroundColor: theme.buttonPrimary }]} onPress={handleSave}>
-          <Text style={[styles.saveText, { color: theme.buttonText }]}>Save</Text>
+        <TouchableOpacity 
+          style={[
+            styles.saveButton, 
+            { 
+              backgroundColor: theme.buttonPrimary,
+              opacity: (!upiId.trim() || !isVerified) ? 0.5 : 1,
+            }
+          ]} 
+          onPress={handleSave}
+          disabled={!upiId.trim() || !isVerified}
+        >
+          <Text style={[styles.saveText, { color: theme.buttonText }]}>{isEditMode ? 'Update' : 'Save'}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Loading Modal */}
+      <Modal visible={isVerifying} transparent animationType="fade">
+        <View style={styles.loadingModalOverlay}>
+          <View style={[styles.loadingModalContent, { backgroundColor: theme.background }]}>
+            <ActivityIndicator size="large" color={theme.buttonPrimary} />
+            <Text style={[styles.loadingText, { color: theme.textPrimary }]}>Verifying UPI ID...</Text>
+          </View>
+        </View>
+      </Modal>
 
       <BottomNav active="home" />
     </View>
@@ -197,6 +303,34 @@ const createStyles = (theme: any) =>
     fontSize: 16,
     fontWeight: '700',
       color: theme.buttonText,
+  },
+  verifiedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  verifiedText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  loadingModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingModalContent: {
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+    minWidth: 200,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

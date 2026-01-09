@@ -3,9 +3,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomNav from '../components/BottomNav';
-import { useAppSelector } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectCartTotals } from '../store/slices/cartSlice';
-import { CardPayment, UpiAccount } from '../store/slices/paymentSlice';
+import { CardPayment, removeCard, UpiAccount } from '../store/slices/paymentSlice';
 import { useTheme } from '../theme/useTheme';
 
 type TabKey = 'card' | 'upi' | 'cash';
@@ -18,9 +18,12 @@ const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }
 
 const PaymentScreen = () => {
   const { theme } = useTheme();
+  const dispatch = useAppDispatch();
   const params = useLocalSearchParams<{ tab?: string }>();
   const cardList = useAppSelector((state) => state.payment.cardList);
   const upiList = useAppSelector((state) => state.payment.upiList);
+  const defaultUpiId = useAppSelector((state) => state.payment.defaultUpiId);
+  const defaultCardId = useAppSelector((state) => state.payment.defaultCardId);
   const totals = useAppSelector(selectCartTotals);
 
   const [tab, setTab] = useState<TabKey>('card');
@@ -30,6 +33,9 @@ const PaymentScreen = () => {
   const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [showPaymentButtons, setShowPaymentButtons] = useState(false);
   const [selectedUpiId, setSelectedUpiId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
 
   // Read tab from URL params
   useEffect(() => {
@@ -37,6 +43,25 @@ const PaymentScreen = () => {
       setTab(params.tab as TabKey);
     }
   }, [params.tab]);
+
+  // Pre-select default payment method when tab changes
+  useEffect(() => {
+    if (tab === 'upi' && defaultUpiId && upiList.some((upi) => upi.id === defaultUpiId)) {
+      setSelectedUpiId(defaultUpiId);
+    } else if (tab === 'upi' && upiList.length > 0) {
+      setSelectedUpiId(upiList[0].id);
+    } else {
+      setSelectedUpiId(null);
+    }
+
+    if (tab === 'card' && defaultCardId && cardList.some((card) => card.id === defaultCardId)) {
+      setSelectedCardId(defaultCardId);
+    } else if (tab === 'card' && cardList.length > 0) {
+      setSelectedCardId(cardList[0].id);
+    } else {
+      setSelectedCardId(null);
+    }
+  }, [tab, defaultUpiId, defaultCardId, upiList, cardList]);
 
   // Timer for processing modal - show buttons after 5 seconds
   useEffect(() => {
@@ -78,14 +103,18 @@ const PaymentScreen = () => {
 
     // Card flow requires OTP before success
     if (tab === 'card') {
+      // Use selected card or default card
+      const cardToUse = selectedCardId || defaultCardId || cardList[0]?.id;
+      setSelectedCardId(cardToUse || null);
       setShowCardOtp(true);
       return;
     }
 
     // UPI flow - show processing modal
     if (tab === 'upi' && upiList.length > 0) {
-      // Use first UPI ID if available
-      setSelectedUpiId(upiList[0]?.id || null);
+      // Use selected UPI or default UPI
+      const upiToUse = selectedUpiId || defaultUpiId || upiList[0]?.id;
+      setSelectedUpiId(upiToUse);
       setShowProcessingModal(true);
       setShowPaymentButtons(false);
       return;
@@ -114,52 +143,129 @@ const PaymentScreen = () => {
     }
   };
 
-  const renderCardItem = (item: CardPayment) => (
-    <View key={item.id} style={[styles.listCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-      <View style={styles.listHeader}>
-        <View style={styles.listLeft}>
-          <Ionicons name="card-outline" size={22} color={theme.textPrimary} />
-          <View>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{cardTitle(item.brand)}</Text>
-            <Text style={[styles.sub, { color: theme.textSecondary }]}>Card no : {item.maskedNumber}</Text>
-            <Text style={[styles.sub, { color: theme.textSecondary }]}>Expires : {item.expires}</Text>
-          </View>
-        </View>
-        <Verification status={item.status} />
-      </View>
-      <View style={styles.actionsRow}>
-        <TouchableOpacity>
-          <Ionicons name="pencil" size={18} color={theme.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{ marginLeft: 16 }}>
-          <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const handleEditCard = (item: CardPayment, e: any) => {
+    e?.stopPropagation?.();
+    // Extract last 4 digits from masked number (e.g., "**** 1234" -> "1234")
+    const lastFour = item.maskedNumber.replace(/\D/g, '').slice(-4);
+    // For editing, we'll pass the masked format - user can edit from there
+    router.push(`/settings/payment/card?edit=true&cardId=${item.id}&brand=${item.brand}&name=${encodeURIComponent(item.name)}&number=${encodeURIComponent(item.maskedNumber)}&expires=${item.expires}&next=/payment`);
+  };
 
-  const renderUpiItem = (item: UpiAccount) => (
-    <View key={item.id} style={[styles.listCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-      <View style={styles.listHeader}>
-        <View style={styles.listLeft}>
-          <Ionicons name="logo-google" size={22} color={theme.textPrimary} />
-          <View>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>{providerLabel(item.provider)}</Text>
-            <Text style={[styles.sub, { color: theme.textSecondary }]}>UPI ID : {item.upiId}</Text>
+  const handleDeleteCard = (item: CardPayment, e: any) => {
+    e?.stopPropagation?.();
+    setCardToDelete(item.id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCard = () => {
+    if (cardToDelete) {
+      dispatch(removeCard(cardToDelete));
+      setShowDeleteModal(false);
+      setCardToDelete(null);
+      router.replace('/settings/payment?tab=card');
+    }
+  };
+
+  const cancelDeleteCard = () => {
+    setShowDeleteModal(false);
+    setCardToDelete(null);
+  };
+
+  const renderCardItem = (item: CardPayment) => {
+    const isDefault = item.id === defaultCardId;
+    const isSelected = item.id === selectedCardId;
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.listCard,
+          {
+            backgroundColor: theme.card,
+            shadowColor: theme.shadow,
+            borderColor: isSelected ? theme.buttonPrimary : theme.divider,
+            borderWidth: isSelected ? 2 : 1,
+          },
+        ]}
+        onPress={() => setSelectedCardId(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.listHeader}>
+          <View style={styles.listLeft}>
+            <Ionicons name="card-outline" size={22} color={theme.textPrimary} />
+            <View style={styles.cardInfo}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{cardTitle(item.brand)}</Text>
+              <Text style={[styles.sub, { color: theme.textSecondary }]}>Card no : {item.maskedNumber}</Text>
+              <Text style={[styles.sub, { color: theme.textSecondary }]}>Expires : {item.expires}</Text>
+            </View>
+          </View>
+          <View style={styles.rightSection}>
+            {isDefault && (
+              <View style={[styles.defaultBadge, { backgroundColor: (theme as any).success || '#00C853' }]}>
+                <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                <Text style={styles.defaultBadgeText}>Default</Text>
+              </View>
+            )}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity onPress={(e) => handleEditCard(item, e)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="pencil" size={18} color={theme.textPrimary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={(e) => handleDeleteCard(item, e)} style={{ marginLeft: 16 }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        <Verification status={item.status} />
-      </View>
-      <View style={styles.actionsRow}>
-        <TouchableOpacity>
-          <Ionicons name="pencil" size={18} color={theme.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{ marginLeft: 16 }}>
-          <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+      </TouchableOpacity>
+    );
+  };
+
+  const renderUpiItem = (item: UpiAccount) => {
+    const isDefault = item.id === defaultUpiId;
+    const isSelected = item.id === selectedUpiId;
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.listCard,
+          {
+            backgroundColor: theme.card,
+            shadowColor: theme.shadow,
+            borderColor: isSelected ? theme.buttonPrimary : theme.divider,
+            borderWidth: isSelected ? 2 : 1,
+          },
+        ]}
+        onPress={() => setSelectedUpiId(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.listHeader}>
+          <View style={styles.listLeft}>
+            <Ionicons name="logo-google" size={22} color={theme.textPrimary} />
+            <View style={styles.cardInfo}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{providerLabel(item.provider)}</Text>
+              <Text style={[styles.sub, { color: theme.textSecondary }]}>UPI ID : {item.upiId}</Text>
+            </View>
+          </View>
+          <View style={styles.rightSection}>
+            {isDefault && (
+              <View style={[styles.defaultBadge, { backgroundColor: (theme as any).success || '#00C853' }]}>
+                <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                <Text style={styles.defaultBadgeText}>Default</Text>
+              </View>
+            )}
+            <Verification status={item.status} />
+          </View>
+        </View>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity>
+            <Ionicons name="pencil" size={18} color={theme.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={{ marginLeft: 16 }}>
+            <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderMethods = () => {
     if (tab === 'card') {
@@ -377,6 +483,34 @@ const PaymentScreen = () => {
           </View>
         </Modal>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <Modal transparent animationType="fade" visible onRequestClose={cancelDeleteCard}>
+          <View style={styles.otpOverlay}>
+            <View style={[styles.otpCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+              <Text style={[styles.otpTitle, { color: theme.textPrimary }]}>Delete Card?</Text>
+              <Text style={[styles.otpSubtitle, { color: theme.textSecondary }]}>
+                Are you sure you want to delete this card?
+              </Text>
+              <View style={styles.otpActions}>
+                <TouchableOpacity
+                  style={[styles.otpButton, { backgroundColor: (theme as any).buttonSecondary || (theme as any).backgroundSecondary || theme.card }]}
+                  onPress={cancelDeleteCard}
+                >
+                  <Text style={[styles.otpButtonText, { color: theme.textPrimary }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.otpButton, { backgroundColor: theme.error || '#D10505' }]}
+                  onPress={confirmDeleteCard}
+                >
+                  <Text style={[styles.otpButtonText, { color: theme.buttonText || '#FFFFFF' }]}>Yes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -484,8 +618,22 @@ const styles = StyleSheet.create({
   listCard: {
     borderRadius: 12,
     padding: 12,
-    borderWidth: 1,
-    borderColor: '#F1F1F1',
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  defaultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  defaultBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   listHeader: {
     flexDirection: 'row',
@@ -497,6 +645,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flex: 1,
+  },
+  rightSection: {
+    alignItems: 'flex-end',
+    gap: 6,
   },
   title: {
     fontSize: 16,
@@ -508,8 +661,8 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
+    alignItems: 'center',
+    gap: 12,
   },
   cashCard: {
     borderRadius: 12,
