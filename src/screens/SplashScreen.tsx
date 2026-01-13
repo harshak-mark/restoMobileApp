@@ -2,13 +2,14 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
 import Logo from '../../assets/LOGO.svg';
+import LogoWhite from '../../assets/images/LOGOwhite.svg';
 import { useTheme } from '../theme/useTheme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -83,10 +84,17 @@ export default function SplashScreen() {
     >
       {phase === 'white-logo' && (
         <Animated.View style={logoStyle}>
-          <Logo
-            width={SCREEN_HEIGHT < 700 ? 150 : 180}
-            height={SCREEN_HEIGHT < 700 ? 150 : 180}
-          />
+          {(theme as any).mode === 'dark' ? (
+            <LogoWhite
+              width={SCREEN_HEIGHT < 700 ? 150 : 180}
+              height={SCREEN_HEIGHT < 700 ? 150 : 180}
+            />
+          ) : (
+            <Logo
+              width={SCREEN_HEIGHT < 700 ? 150 : 180}
+              height={SCREEN_HEIGHT < 700 ? 150 : 180}
+            />
+          )}
         </Animated.View>
       )}
     </Animated.View>

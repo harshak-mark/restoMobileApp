@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Linking,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +17,7 @@ import { selectCartTotals } from '../store/slices/cartSlice';
 import { useTheme } from '../theme/useTheme';
 
 type TabKey = 'delivery' | 'takeaway' | 'dinein';
+type FloorId = 'ground' | 'first' | 'second' | 'third' | 'rooftop';
 
 const TAB_CONFIG: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'delivery', label: 'Home Delivery', icon: 'home' },
@@ -23,6 +26,14 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyp
 ];
 
 const timeSlots = ['9/20', '10/20', '11/20'];
+
+const floorTabs: { id: FloorId; label: string }[] = [
+  { id: 'ground', label: 'Ground Floor' },
+  { id: 'first', label: '1st Floor' },
+  { id: 'second', label: '2nd Floor' },
+  { id: 'third', label: '3rd Floor' },
+  { id: 'rooftop', label: 'Rooftop' },
+];
 
 export default function CheckoutFlowScreen() {
   const { theme } = useTheme();
@@ -35,6 +46,28 @@ export default function CheckoutFlowScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('delivery');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(defaultAddressId || null);
   const [selectedSlot, setSelectedSlot] = useState<string>(timeSlots[1]);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [activeFloor, setActiveFloor] = useState<FloorId>('ground');
+  const restaurantPhone = '+1 234 567 8900';
+  
+  // Table data - simplified version for checkout
+  const [tableData] = useState([
+    { id: 'T-1', status: 'available' },
+    { id: 'T-2', status: 'reserved' },
+    { id: 'T-3', status: 'available' },
+    { id: 'T-4', status: 'reserved' },
+    { id: 'T-5', status: 'available' },
+    { id: 'T-6', status: 'reserved' },
+    { id: 'T-7', status: 'available' },
+    { id: 'T-8', status: 'reserved' },
+    { id: 'T-9', status: 'available' },
+    { id: 'T-10', status: 'available' },
+    { id: 'T-11', status: 'reserved' },
+    { id: 'T-12', status: 'available' },
+    { id: 'T-13', status: 'reserved' },
+    { id: 'T-14', status: 'available' },
+    { id: 'T-15', status: 'available' },
+  ]);
 
   const addressList = useMemo(() => {
     return addresses;
@@ -160,31 +193,46 @@ export default function CheckoutFlowScreen() {
     </View>
   );
 
+  const handleQRCodeScan = () => {
+    // QR Code scan functionality - can be implemented later
+    console.log('QR Code scan for Dine-in');
+  };
+
+  const handleCallRestaurant = async () => {
+    try {
+      const phoneUrl = `tel:${restaurantPhone.replace(/\s/g, '')}`;
+      const canOpen = await Linking.canOpenURL(phoneUrl);
+      if (canOpen) {
+        await Linking.openURL(phoneUrl);
+      }
+    } catch (error) {
+      console.error('Error making phone call:', error);
+    }
+  };
+
   const renderDineIn = () => (
     <View style={styles.sectionCard}>
-      <View style={styles.deliveryInfoRow}>
-        <InfoPill icon="restaurant-outline" label="Dine-In" value="Reserve table" />
-        <InfoPill icon="time-outline" label="Slots" value="Select timing" />
-        <InfoPill icon="shield-checkmark-outline" label="Check availability" value="Live" />
-      </View>
-      <View style={styles.slotRow}>
-        {timeSlots.map((slot) => {
-          const selected = slot === selectedSlot;
-          return (
-            <TouchableOpacity
-              key={slot}
-              style={[
-                styles.slotButton,
-                { borderColor: selected ? theme.buttonPrimary : theme.divider, backgroundColor: selected ? '#FFF4E5' : theme.background },
-              ]}
-              onPress={() => setSelectedSlot(slot)}
-            >
-              <Text style={[styles.slotText, { color: selected ? theme.buttonPrimary : theme.textPrimary }]}>{slot}</Text>
-            </TouchableOpacity>
-          );
-        })}
-        <TouchableOpacity style={[styles.slotButton, styles.checkButton, { borderColor: theme.buttonPrimary }]}>
-          <Text style={[styles.slotText, { color: theme.buttonPrimary }]}>Check availability</Text>
+      <View style={styles.dineInRow}>
+        <TouchableOpacity 
+          style={[styles.dineInButton, { backgroundColor: theme.buttonPrimary }]}
+          onPress={handleQRCodeScan}
+        >
+          <Text style={[styles.dineInButtonText, { color: theme.buttonText }]}>
+            QR Code for{'\n'}Dine-in
+          </Text>
+        </TouchableOpacity>
+        
+        <View style={styles.dineInDivider} />
+        
+        <View style={styles.dineInCenterContent}>
+          <Text style={[styles.dineInSlotText, { color: theme.textPrimary }]}>{selectedSlot}</Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={[styles.dineInCallButton, { backgroundColor: theme.buttonPrimary }]}
+          onPress={() => setShowAvailabilityModal(true)}
+        >
+          <Text style={[styles.dineInCallText, { color: theme.buttonText }]}>Check availability</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -230,7 +278,13 @@ export default function CheckoutFlowScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={22} color={theme.buttonText} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.buttonText }]}>Your Cart</Text>
+        <Text style={[styles.headerTitle, { color: theme.buttonText, flex: 1 }]}>Your Cart</Text>
+        <TouchableOpacity 
+          style={styles.notificationButton}
+          onPress={() => router.push({ pathname: '/notifications', params: { from: 'checkout' } })}
+        >
+          <Ionicons name="notifications-outline" size={24} color={theme.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -321,6 +375,99 @@ export default function CheckoutFlowScreen() {
         </View>
       </ScrollView>
 
+      {/* Availability Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showAvailabilityModal}
+        onRequestClose={() => setShowAvailabilityModal(false)}
+      >
+        <View style={styles.availabilityOverlay}>
+          <View style={[styles.availabilityCard, { backgroundColor: theme.background }]}>
+            <View style={styles.availabilityHeader}>
+              <Text style={[styles.availabilityTitle, { color: theme.textPrimary }]}>
+                Select Table
+              </Text>
+              <TouchableOpacity onPress={() => setShowAvailabilityModal(false)}>
+                <Ionicons name="close" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Floor Tabs */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.floorTabsContainer}
+              contentContainerStyle={styles.floorTabsContent}
+            >
+              {floorTabs.map((floor) => (
+                <TouchableOpacity
+                  key={floor.id}
+                  style={[
+                    styles.floorTab,
+                    {
+                      backgroundColor: activeFloor === floor.id ? theme.buttonPrimary : theme.backgroundSecondary,
+                    },
+                  ]}
+                  onPress={() => setActiveFloor(floor.id)}
+                >
+                  <Text
+                    style={[
+                      styles.floorTabText,
+                      { color: activeFloor === floor.id ? theme.buttonText : theme.textPrimary },
+                    ]}
+                  >
+                    {floor.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Legend */}
+            <View style={styles.legendContainer}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendSquare, { backgroundColor: '#007A59' }]} />
+                <Text style={[styles.legendText, { color: theme.textPrimary }]}>Available</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendSquare, { backgroundColor: '#D10505' }]} />
+                <Text style={[styles.legendText, { color: theme.textPrimary }]}>Reserved</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendSquare, { backgroundColor: '#FFB500' }]} />
+                <Text style={[styles.legendText, { color: theme.textPrimary }]}>Available soon</Text>
+              </View>
+            </View>
+
+            {/* Table Grid */}
+            <ScrollView style={styles.tableGridScroll}>
+              <View style={styles.tableGrid}>
+                {tableData.map((table, index) => {
+                  const isReserved = table.status === 'reserved';
+                  const backgroundColor = isReserved ? '#D10505' : '#007A59';
+                  const isLastInRow = (index + 1) % 5 === 0;
+
+                  return (
+                    <View
+                      key={table.id}
+                      style={[
+                        styles.tableItem,
+                        {
+                          backgroundColor,
+                          marginRight: isLastInRow ? 0 : 8,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.tableItemText}>{table.id}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <BottomNav active="cart" />
     </View>
   );
@@ -350,6 +497,12 @@ const createStyles = (theme: any) =>
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
+  },
+  notificationButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -518,6 +671,63 @@ const createStyles = (theme: any) =>
     fontSize: 14,
     fontWeight: '600',
   },
+  dineInRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dineInButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dineInButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  dineInDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: theme?.divider || '#E0E0E0',
+  },
+  dineInCenterContent: {
+    paddingHorizontal: 8,
+  },
+  dineInSlotText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  dineInCallButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  dineInCallText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  checkAvailabilityButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkAvailabilityText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   summaryCard: {
     borderRadius: 18,
     padding: 16,
@@ -572,5 +782,91 @@ const createStyles = (theme: any) =>
   checkoutText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  availabilityOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  availabilityCard: {
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '80%',
+    borderRadius: 20,
+    padding: 20,
+  },
+  availabilityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  availabilityTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  floorTabsContainer: {
+    marginBottom: 16,
+  },
+  floorTabsContent: {
+    gap: 8,
+    paddingRight: 20,
+  },
+  floorTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  floorTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme?.divider || '#E0E0E0',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendSquare: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tableGridScroll: {
+    maxHeight: 300,
+  },
+  tableGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tableItem: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  tableItemText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

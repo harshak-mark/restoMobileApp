@@ -12,12 +12,14 @@ import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 type TabKey = 'home' | 'menu' | 'cart' | 'view';
+type ButtonType = 'hexagon' | 'circle';
 
 interface BottomNavProps {
   active?: TabKey;
+  buttonType?: ButtonType;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ active, buttonType = 'hexagon' }) => {
   const { theme } = useTheme();
   const cartCount = useAppSelector((state) => selectCartCount(state as RootState));
   const insets = useSafeAreaInsets();
@@ -50,11 +52,18 @@ const BottomNav: React.FC<BottomNavProps> = ({ active }) => {
           <SubtractBorderSvg width="100%" height={svgHeight} preserveAspectRatio="none" />
         </View>
 
-        {/* Hexagon button - only show on non-view pages */}
-        {active !== 'view' && (
+        {/* Hexagon or Circle button - only show on non-view pages or when buttonType is circle */}
+        {active !== 'view' && buttonType === 'hexagon' && (
           <View style={[styles.hexagonContainer, { bottom: hexagonBottom }]}>
             <TouchableOpacity style={styles.hexagonButton}>
               <SixSideBoxSvg width={54} height={61} />
+            </TouchableOpacity>
+          </View>
+        )}
+        {buttonType === 'circle' && (
+          <View style={[styles.circleContainer, { bottom: hexagonBottom }]}>
+            <TouchableOpacity style={styles.circleButton}>
+              <View style={[styles.circle, { backgroundColor: theme.buttonPrimary }]} />
             </TouchableOpacity>
           </View>
         )}
@@ -150,6 +159,24 @@ const styles = StyleSheet.create({
   hexagonButton: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  circleContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  circleButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
   },
   bottomNavBar: {
     flexDirection: 'row',

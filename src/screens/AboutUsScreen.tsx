@@ -4,7 +4,6 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import SixSideBoxSvg from '../../assets/images/6sidebox.svg';
 import Cust1Svg from '../../assets/images/customers/cust1.svg';
 import Cust2Svg from '../../assets/images/customers/cust2.svg';
 import Cust3Svg from '../../assets/images/customers/cust3.svg';
@@ -160,14 +159,7 @@ export default function AboutUsScreen() {
         </View>
       </ScrollView>
 
-      {/* Hexagon Button */}
-      <View style={[styles.hexagonContainer, { bottom: insets.bottom + 25 }]}>
-        <TouchableOpacity style={styles.hexagonButton}>
-          <SixSideBoxSvg width={54} height={61} />
-        </TouchableOpacity>
-      </View>
-
-      <BottomNav active="view" />
+      <BottomNav active="view" buttonType="circle" />
     </View>
   );
 }
@@ -315,18 +307,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingLeft: 60,
     fontFamily: 'Inter_400Regular',
-  },
-  hexagonContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-  },
-  hexagonButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 

@@ -109,10 +109,24 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
             </View>
           </View>
 
-          {/* Close Button */}
-          <TouchableOpacity style={[styles.closeButton, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.textPrimary }]} onPress={onClose}>
-            <Ionicons name="close" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
+          {/* Header Right Icons */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.headerIconButton}
+              onPress={() => {
+                onClose();
+                router.push({
+                  pathname: '/notifications' as any,
+                  params: { from: 'settings' }
+                });
+              }}
+            >
+              <Ionicons name="notifications-outline" size={24} color={theme.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.closeButton, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.textPrimary }]} onPress={onClose}>
+              <Ionicons name="close" size={24} color={theme.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Content Section */}
@@ -245,6 +259,18 @@ const createStyles = (theme: any) =>
     fontSize: 14,
     marginTop: 4,
     opacity: 0.9,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeButton: {
     width: 36,

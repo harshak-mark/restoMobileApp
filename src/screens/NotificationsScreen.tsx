@@ -9,9 +9,10 @@ export default function NotificationsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ from?: string }>();
   const backToSettings = params.from === 'settings';
+  const backToCheckout = params.from === 'checkout';
 
   const handleBack = () => {
-    if (backToSettings) {
+    if (backToSettings || backToCheckout) {
       router.replace('/settings');
     } else {
       router.back();

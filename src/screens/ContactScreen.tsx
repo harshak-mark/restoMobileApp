@@ -12,6 +12,7 @@ type SubjectType = 'general' | 'event' | 'dining' | 'business';
 
 const ContactScreen = () => {
   const { theme } = useTheme();
+  const isDarkTheme = (theme as any).mode === 'dark';
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('+1 012 3456 789');
@@ -51,13 +52,14 @@ const ContactScreen = () => {
   };
 
   return (
-    <View style={styles.root}>
-      {/* Background SVG */}
-      <View style={styles.backgroundContainer}>
-        <ContactusbgSvg 
-          style={styles.backgroundSvg}
-        />
-      </View>
+    <View style={[styles.root, { backgroundColor: isDarkTheme ? '#121212' : '#FFF8F0' }]}>
+      {/* Background SVG - Always show, blend with theme */}
+      <ContactusbgSvg 
+        style={[
+          StyleSheet.absoluteFill,
+          { opacity: isDarkTheme ? 0.3 : 1 }
+        ]}
+      />
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.buttonPrimary, zIndex: 1 }]}>
@@ -79,7 +81,7 @@ const ContactScreen = () => {
         style={styles.scrollView}
       >
         {/* Title Section */}
-        <View style={styles.titleSection}>
+        <View style={[styles.titleSection, { backgroundColor: 'transparent' }]}>
           <Text style={[styles.title, { color: theme.textPrimary }]}>Contact Us</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             Any question or remarks?{'\n'}Just write us a message!
@@ -87,14 +89,14 @@ const ContactScreen = () => {
         </View>
 
         {/* Contact Information Card */}
-        <View style={styles.contactCard}>
+        <View style={[styles.contactCard, ]}>
           <View style={styles.phoneImageContainer}>
             <PhoneSvg width="100%" height="100%" style={styles.phoneImage} />
           </View>
           
           <View style={styles.contactCardContent}>
             <Text style={[styles.contactCardTitle, { color: theme.buttonText }]}>Contact Information</Text>
-            <Text style={[styles.contactCardSubtitle, { color: theme.textMuted }]}>
+            <Text style={[styles.contactCardSubtitle, { color: isDarkTheme ? '#FFFFFF' : theme.textMuted }]}>
               Say something to start a live chat!
             </Text>
 
@@ -131,7 +133,7 @@ const ContactScreen = () => {
         </View>
 
         {/* Contact Form */}
-        <View style={styles.formSection}>
+        <View style={[styles.formSection, ]}>
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>First Name</Text>
             <TextInput
@@ -344,7 +346,7 @@ const ContactScreen = () => {
         </View>
       </Modal>
 
-      <BottomNav active="home" />
+      <BottomNav active="home" buttonType="circle" />
     </View>
   );
 };
@@ -364,6 +366,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     zIndex: 1,
+    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: 20,
@@ -397,6 +400,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    backgroundColor: 'transparent',
   },
   titleSection: {
     marginBottom: 24,
@@ -414,13 +418,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contactCard: {
-    borderRadius: 16,
+    borderRadius: 5,
     padding: 0,
     marginBottom: 24,
     overflow: 'hidden',
     position: 'relative',
     minHeight: 400,
-    backgroundColor: 'transparent',
   },
   phoneImageContainer: {
     position: 'absolute',
@@ -484,6 +487,7 @@ const styles = StyleSheet.create({
   formSection: {
     gap: 16,
     padding: 20,
+    borderRadius: 16,
   },
   inputGroup: {
     marginBottom: 16,

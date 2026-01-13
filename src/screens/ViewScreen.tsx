@@ -102,7 +102,7 @@ export default function ViewScreen() {
         </View>
       </ImageBackground>
 
-      <BottomNav active="view" />
+      <BottomNav active="view" buttonType="circle" />
     </View>
   );
 }

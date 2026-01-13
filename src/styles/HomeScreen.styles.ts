@@ -726,6 +726,7 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     maxHeight: SCREEN_HEIGHT * 0.7,
     paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
   },
   addressDropdownHeader: {
     flexDirection: 'row',
@@ -739,6 +740,7 @@ export const styles = StyleSheet.create({
   addressDropdownTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 18,
+    color: '#000000', // Default color for mobile visibility
   },
   addressDropdownList: {
     maxHeight: SCREEN_HEIGHT * 0.5,
@@ -747,9 +749,14 @@ export const styles = StyleSheet.create({
   },
   addressDropdownItem: {
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   addressItemContent: {
     flex: 1,
@@ -757,13 +764,24 @@ export const styles = StyleSheet.create({
   addressItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    gap: 8,
   },
   addressItemLabel: {
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'Inter_700Bold',
     fontSize: 16,
-    marginLeft: 8,
     flex: 1,
+  },
+  defaultBadgeContainer: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 'auto',
+  },
+  addressDefaultBadgeText: {
+    color: '#00C853',
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
   addressCheckIcon: {
     marginLeft: 'auto',
@@ -771,27 +789,44 @@ export const styles = StyleSheet.create({
   addressItemText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
-    marginLeft: 28,
-    marginBottom: 4,
+    marginTop: 2,
+    lineHeight: 20,
   },
   addressItemLandmark: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     marginLeft: 28,
   },
+  addressEmptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    minHeight: 200,
+  },
+  addressEmptyText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666666', // Default color for mobile visibility
+  },
   addressAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingVertical: 14,
+    marginHorizontal: 10,
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 12,
     gap: 8,
   },
   addressAddButtonText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
+    color: '#FFFFFF', // Default color for mobile visibility
   },
 });
 
