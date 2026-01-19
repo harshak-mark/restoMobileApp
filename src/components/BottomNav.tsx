@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SixSideBoxSvg from '../../assets/images/6sidebox.svg';
@@ -17,13 +18,40 @@ type ButtonType = 'hexagon' | 'circle';
 interface BottomNavProps {
   active?: TabKey;
   buttonType?: ButtonType;
+  onCirclePress?: () => void;
+  isPopupOpen?: boolean;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ active, buttonType = 'hexagon' }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ active, buttonType = 'hexagon', onCirclePress, isPopupOpen = false }) => {
   const { theme } = useTheme();
   const cartCount = useAppSelector((state) => selectCartCount(state as RootState));
   const insets = useSafeAreaInsets();
   const hasNavButtons = insets.bottom > 0;
+  const circleAnimation = useSharedValue(isPopupOpen ? 1 : 0);
+
+  useEffect(() => {
+    circleAnimation.value = withTiming(isPopupOpen ? 1 : 0, { duration: 250 });
+  }, [isPopupOpen]);
+
+  const circleAnimatedStyle = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      circleAnimation.value,
+      [0, 1],
+      [theme.buttonPrimary, '#FFFFFF']
+    );
+    return {
+      backgroundColor,
+    };
+  });
+
+  const addIconOpacity = useAnimatedStyle(() => ({
+    opacity: 1 - circleAnimation.value,
+  }));
+
+  const closeIconOpacity = useAnimatedStyle(() => ({
+    opacity: circleAnimation.value,
+  }));
+
 
   // Calculate dynamic spacing based on navigation buttons
   // Ensure nav is positioned above system navigation buttons
@@ -62,8 +90,32 @@ const BottomNav: React.FC<BottomNavProps> = ({ active, buttonType = 'hexagon' })
         )}
         {buttonType === 'circle' && (
           <View style={[styles.circleContainer, { bottom: hexagonBottom }]}>
-            <TouchableOpacity style={styles.circleButton}>
-              <View style={[styles.circle, { backgroundColor: theme.buttonPrimary }]} />
+            <TouchableOpacity 
+              style={styles.circleButton}
+              onPress={onCirclePress}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Animated.View 
+                style={[
+                  styles.circle,
+                  circleAnimatedStyle
+                ]}
+              >
+                <Animated.View style={[styles.iconContainer, addIconOpacity]}>
+                  <Ionicons
+                    name="add"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                </Animated.View>
+                <Animated.View style={[styles.iconContainer, styles.iconAbsolute, closeIconOpacity]}>
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={theme.buttonPrimary}
+                  />
+                </Animated.View>
+              </Animated.View>
             </TouchableOpacity>
           </View>
         )}
@@ -177,6 +229,15 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconAbsolute: {
+    position: 'absolute',
   },
   bottomNavBar: {
     flexDirection: 'row',

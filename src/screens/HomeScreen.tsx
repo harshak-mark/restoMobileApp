@@ -280,7 +280,7 @@ export default function HomeScreen() {
           <TouchableOpacity 
             style={styles.locationRow}
             onPress={() => {
-              setShowAddressDropdown(true);
+                setShowAddressDropdown(true);
             }}
             activeOpacity={0.7}
           >
@@ -1052,60 +1052,60 @@ export default function HomeScreen() {
               </View>
             ) : (
               <>
-                <ScrollView style={styles.addressDropdownList} showsVerticalScrollIndicator={false}>
-                  {addresses.map((address) => {
+            <ScrollView style={styles.addressDropdownList} showsVerticalScrollIndicator={false}>
+              {addresses.map((address) => {
                     const isDefault = address.id === defaultAddressId;
                     const iconName = address.label === 'Home' ? 'home' : address.label === 'Work' ? 'briefcase' : 'location-outline';
-                    return (
-                      <TouchableOpacity
-                        key={address.id}
-                        style={[
-                          styles.addressDropdownItem,
-                          {
+                return (
+                  <TouchableOpacity
+                    key={address.id}
+                    style={[
+                      styles.addressDropdownItem,
+                      {
                             backgroundColor: theme.card || '#FFFFFF',
                             borderColor: theme.divider || '#E0E0E0',
-                          },
-                        ]}
-                        onPress={() => handleAddressSelect(address.id)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.addressItemContent}>
-                          <View style={styles.addressItemHeader}>
-                            <Ionicons
+                      },
+                    ]}
+                    onPress={() => handleAddressSelect(address.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.addressItemContent}>
+                      <View style={styles.addressItemHeader}>
+                        <Ionicons
                               name={iconName as any}
                               size={24}
                               color={theme.textSecondary || '#666666'}
-                            />
+                        />
                             <Text style={[styles.addressItemLabel, { color: theme.textPrimary }]}>
-                              {address.label}
-                            </Text>
+                          {address.label}
+                        </Text>
                             {isDefault && (
                               <View style={[styles.defaultBadgeContainer]}>
                                 <Text style={styles.addressDefaultBadgeText}>Default</Text>
                               </View>
-                            )}
-                          </View>
-                          <Text style={[styles.addressItemText, { color: theme.textSecondary }]}>
-                            {formatAddress(address)}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-                
-                <TouchableOpacity
-                  style={[styles.addressAddButton, { backgroundColor: theme.buttonPrimary }]}
-                  onPress={() => {
-                    setShowAddressDropdown(false);
+                        )}
+                      </View>
+                      <Text style={[styles.addressItemText, { color: theme.textSecondary }]}>
+                        {formatAddress(address)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            
+            <TouchableOpacity
+              style={[styles.addressAddButton, { backgroundColor: theme.buttonPrimary }]}
+              onPress={() => {
+                setShowAddressDropdown(false);
                     router.push('/settings/delivery-address');
-                  }}
-                >
-                  <Ionicons name="add" size={20} color={theme.buttonText} />
-                  <Text style={[styles.addressAddButtonText, { color: theme.buttonText }]}>
-                    Add New Address
-                  </Text>
-                </TouchableOpacity>
+              }}
+            >
+              <Ionicons name="add" size={20} color={theme.buttonText} />
+              <Text style={[styles.addressAddButtonText, { color: theme.buttonText }]}>
+                Add New Address
+              </Text>
+            </TouchableOpacity>
               </>
             )}
           </View>

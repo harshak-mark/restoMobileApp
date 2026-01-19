@@ -123,9 +123,9 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
             >
               <Ionicons name="notifications-outline" size={24} color={theme.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.closeButton, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.textPrimary }]} onPress={onClose}>
-              <Ionicons name="close" size={24} color={theme.textPrimary} />
-            </TouchableOpacity>
+          <TouchableOpacity style={[styles.closeButton, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.textPrimary }]} onPress={onClose}>
+            <Ionicons name="close" size={24} color={theme.textPrimary} />
+          </TouchableOpacity>
           </View>
         </View>
 

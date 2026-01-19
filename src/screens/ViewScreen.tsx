@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,26 @@ export default function ViewScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const rotation = useSharedValue(0);
+  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
+  const popupOpacity = useSharedValue(0);
+  const popupTranslateY = useSharedValue(20);
+
+  useEffect(() => {
+    if (isPopupOpen) {
+      popupOpacity.value = withTiming(1, { duration: 250 });
+      popupTranslateY.value = withTiming(0, { duration: 250 });
+    } else {
+      popupOpacity.value = withTiming(0, { duration: 200 });
+      popupTranslateY.value = withTiming(20, { duration: 200 });
+    }
+  }, [isPopupOpen]);
+
+  const popupAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: popupOpacity.value,
+      transform: [{ translateY: popupTranslateY.value }],
+    };
+  });
 
   const handlePhonePress = () => {
     router.push('/contact');
@@ -27,16 +46,14 @@ export default function ViewScreen() {
     setIsPopupOpen(false);
   };
 
-  const handleCirclePress = () => {
-    setIsPopupOpen(!isPopupOpen);
-    rotation.value = withTiming(isPopupOpen ? 0 : 45, { duration: 250 });
+  const handleLocationPress = () => {
+    router.push('/settings/delivery-address');
+    setIsPopupOpen(false);
   };
 
-  const animatedIconStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${rotation.value}deg` }],
-    };
-  });
+  const handleCirclePress = () => {
+    setIsPopupOpen(!isPopupOpen);
+  };
 
   return (
     <View style={styles.root}>
@@ -60,49 +77,53 @@ export default function ViewScreen() {
 
         {/* Popup Icons - shown when circle is clicked */}
         {isPopupOpen && (
-          <View style={[styles.popupContainer, { bottom: insets.bottom + 95 }]}>
-            <TouchableOpacity
-              style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}
-              onPress={handlePeoplePress}
+          <Animated.View style={[styles.popupContainer, { bottom: insets.bottom + 75 }, popupAnimatedStyle]}>
+            <View 
+              style={styles.popupIconWrapper}
+              {...({ onMouseEnter: () => setHoveredIcon('people'), onMouseLeave: () => setHoveredIcon(null) } as any)}
             >
-              <Ionicons name="people-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.popupIcon, styles.popupIconMiddle, { backgroundColor: theme.buttonPrimary }]}
-              onPress={handlePhonePress}
+              {hoveredIcon === 'people' && <Text style={styles.popupLabel}>About</Text>}
+              <TouchableOpacity
+                style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}
+                onPress={handlePeoplePress}
+              >
+                <Ionicons name="people-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <View 
+              style={[styles.popupIconWrapper, styles.popupIconWrapperMiddle]}
+              {...({ onMouseEnter: () => setHoveredIcon('phone'), onMouseLeave: () => setHoveredIcon(null) } as any)}
             >
-              <Ionicons name="call-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}>
-              <Ionicons name="location-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+              {hoveredIcon === 'phone' && <Text style={styles.popupLabelMiddle}>Contact</Text>}
+              <TouchableOpacity
+                style={[styles.popupIcon, styles.popupIconMiddle, { backgroundColor: theme.buttonPrimary }]}
+                onPress={handlePhonePress}
+              >
+                <Ionicons name="call-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <View 
+              style={styles.popupIconWrapper}
+              {...({ onMouseEnter: () => setHoveredIcon('location'), onMouseLeave: () => setHoveredIcon(null) } as any)}
+            >
+              {hoveredIcon === 'location' && <Text style={styles.popupLabel}>Location</Text>}
+              <TouchableOpacity 
+                style={[styles.popupIcon, { backgroundColor: theme.buttonPrimary }]}
+                onPress={handleLocationPress}
+              >
+                <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         )}
-
-        {/* Circular Button */}
-        <View style={[styles.circleContainer, { bottom: insets.bottom + 29 }]}>
-          <TouchableOpacity
-            onPress={handleCirclePress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.circleButton,
-              isPopupOpen
-                ? { backgroundColor: '#FFFFFF' }
-                : { backgroundColor: theme.buttonPrimary },
-            ]}
-          >
-            <Animated.View style={animatedIconStyle}>
-              <Ionicons
-                name={isPopupOpen ? 'close' : 'add'}
-                size={24}
-                color={isPopupOpen ? theme.buttonPrimary : '#FFFFFF'}
-              />
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
       </ImageBackground>
 
-      <BottomNav active="view" buttonType="circle" />
+      <BottomNav 
+        active="view" 
+        buttonType="circle" 
+        onCirclePress={handleCirclePress}
+        isPopupOpen={isPopupOpen}
+      />
     </View>
   );
 }
@@ -146,7 +167,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 1001, // Above BottomNav (z-index 1000)
   },
   popupIcon: {
     width: 44,
@@ -157,22 +178,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   popupIconMiddle: {
-    marginTop: -10,
+    marginTop: -40,
   },
-  circleContainer: {
+  popupIconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 10,
+    position: 'relative',
+  },
+  popupIconWrapperMiddle: {
+    marginTop: -40,
+  },
+  popupLabel: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9,
+    top: -28,
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  circleButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
+  popupLabelMiddle: {
+    position: 'absolute',
+    top: -68,
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
 

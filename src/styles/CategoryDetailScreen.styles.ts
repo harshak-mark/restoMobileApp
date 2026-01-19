@@ -97,7 +97,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
-    marginBottom: 80,
+    marginBottom: 100,
   },
   seeMoreText: {
     fontFamily: 'Inter_600SemiBold',
