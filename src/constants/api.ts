@@ -18,5 +18,8 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: '/auth/reset-password',
     LOGOUT: '/auth/logout',
   },
+  PAYMENT: {
+    CREATE_PAYMENT_INTENT: '/create-payment-intent',
+  },
 } as const;
 

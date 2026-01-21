@@ -18,6 +18,10 @@ const PaymentSuccessScreen = () => {
   const method = params.method?.toString() || 'online';
   const paidVia = method === 'cash' ? 'Cash' : method.toUpperCase();
   const orderId = useMemo(() => `#RESTO${Date.now().toString().slice(-6)}`, []);
+  const subtitleText =
+    method === 'cash'
+      ? 'Order placed. You can pay when your food is delivered.'
+      : 'Payment successful';
 
   useEffect(() => {
     if (cartItems.length > 0) {
@@ -43,7 +47,7 @@ const PaymentSuccessScreen = () => {
             <Ionicons name="checkmark" size={32} color="#FFFFFF" />
           </View>
           <Text style={[styles.title, { color: '#000000' }]}>Thank You!</Text>
-          <Text style={[styles.subtitle, { color: '#000000' }]}>Payment successful</Text>
+          <Text style={[styles.subtitle, { color: '#000000' }]}>{subtitleText}</Text>
           {/* <Text style={[styles.meta, { color: '#000000' }]}>{`Order ${orderId}`}</Text>
           <Text style={[styles.meta, { color: '#000000' }]}>{`Paid via ${paidVia}`}</Text>
           <Text style={[styles.helper, { color: '#000000' }]}>View your order summary.</Text> */}

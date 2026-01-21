@@ -259,7 +259,7 @@ export const createStyles = (theme: any, bottomInset: number = 0) =>
     alignItems: 'center',
     marginTop: 'auto',
     marginBottom: Math.max(
-      SCREEN_HEIGHT < 700 ? 80 : 100,
+      SCREEN_HEIGHT < 700 ? 80 : 250,
       bottomInset > 0 ? bottomInset + 60 : 0
     ),
     alignSelf: 'center',
