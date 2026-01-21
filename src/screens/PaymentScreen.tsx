@@ -1,290 +1,137 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BottomNav from '../components/BottomNav';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppSelector } from '../store/hooks';
 import { selectCartTotals } from '../store/slices/cartSlice';
-import { CardPayment, removeCard, UpiAccount } from '../store/slices/paymentSlice';
 import { useTheme } from '../theme/useTheme';
 
-type TabKey = 'card' | 'upi' | 'cash';
+// Conditionally import Stripe service based on platform
+// This prevents web bundler from processing native Stripe imports
+let processPayment: any = null;
+let STRIPE_CONFIG: any = null;
 
-const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'card', label: 'Card', icon: 'card-outline' },
-  { key: 'upi', label: 'UPI', icon: 'qr-code-outline' },
-  { key: 'cash', label: 'Cash', icon: 'cash-outline' },
-];
+if (Platform.OS === 'web') {
+  // On web, use web implementation (no Stripe imports)
+  const webService = require('../services/stripeService.web');
+  processPayment = webService.processPayment;
+} else {
+    // On native, use native implementation
+    try {
+      STRIPE_CONFIG = require('../config/stripe').STRIPE_CONFIG;
+      // Try to require the native service
+      // Note: If this fails with OnrampSdk error, the native app needs to be rebuilt
+      const nativeService = require('../services/stripeService.native');
+      if (nativeService && nativeService.processPayment) {
+        processPayment = nativeService.processPayment;
+      } else {
+        throw new Error('Stripe native service not properly exported');
+      }
+    } catch (error: any) {
+      console.error('Failed to load Stripe native service:', error);
+      // Check if it's the OnrampSdk error (native modules not properly linked)
+      if (error && error.message && error.message.includes('OnrampSdk')) {
+        console.error(
+          'OnrampSdk module not found. This usually means the native app needs to be rebuilt.\n' +
+          'Please run: npx expo prebuild && npx expo run:ios (or npx expo run:android)'
+        );
+      }
+      // On native, don't fallback to web service - it won't work
+      // Instead, set processPayment to null so we can show proper error
+      processPayment = null;
+    }
+  }
 
-const PaymentScreen = () => {
+// Conditionally import StripeProvider only on native platforms
+let StripeProvider: any = null;
+
+if (Platform.OS !== 'web') {
+  try {
+    // Use dynamic require to prevent web bundler from processing
+    const stripeModule = require('@stripe/stripe-react-native');
+    StripeProvider = stripeModule.StripeProvider;
+  } catch (error) {
+    console.warn('Stripe module not available:', error);
+  }
+}
+
+
+const PaymentScreenContent = () => {
   const { theme } = useTheme();
-  const dispatch = useAppDispatch();
-  const params = useLocalSearchParams<{ tab?: string }>();
-  const cardList = useAppSelector((state) => state.payment.cardList);
-  const upiList = useAppSelector((state) => state.payment.upiList);
-  const defaultUpiId = useAppSelector((state) => state.payment.defaultUpiId);
-  const defaultCardId = useAppSelector((state) => state.payment.defaultCardId);
   const totals = useAppSelector(selectCartTotals);
 
-  const [tab, setTab] = useState<TabKey>('card');
-  const [showCardOtp, setShowCardOtp] = useState(false);
-  const [cardOtp, setCardOtp] = useState('');
-  const [cardOtpError, setCardOtpError] = useState('');
-  const [showProcessingModal, setShowProcessingModal] = useState(false);
-  const [showPaymentButtons, setShowPaymentButtons] = useState(false);
-  const [selectedUpiId, setSelectedUpiId] = useState<string | null>(null);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
-
-  // Read tab from URL params
-  useEffect(() => {
-    if (params.tab && (params.tab === 'card' || params.tab === 'upi' || params.tab === 'cash')) {
-      setTab(params.tab as TabKey);
-    }
-  }, [params.tab]);
-
-  // Pre-select default payment method when tab changes
-  useEffect(() => {
-    if (tab === 'upi' && defaultUpiId && upiList.some((upi) => upi.id === defaultUpiId)) {
-      setSelectedUpiId(defaultUpiId);
-    } else if (tab === 'upi' && upiList.length > 0) {
-      setSelectedUpiId(upiList[0].id);
-    } else {
-      setSelectedUpiId(null);
-    }
-
-    if (tab === 'card' && defaultCardId && cardList.some((card) => card.id === defaultCardId)) {
-      setSelectedCardId(defaultCardId);
-    } else if (tab === 'card' && cardList.length > 0) {
-      setSelectedCardId(cardList[0].id);
-    } else {
-      setSelectedCardId(null);
-    }
-  }, [tab, defaultUpiId, defaultCardId, upiList, cardList]);
-
-  // Timer for processing modal - show buttons after 5 seconds
-  useEffect(() => {
-    if (showProcessingModal && !showPaymentButtons) {
-      const timer = setTimeout(() => {
-        setShowPaymentButtons(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showProcessingModal, showPaymentButtons]);
-
-  const hasMethods = useMemo(() => {
-    if (tab === 'card') return cardList.length > 0;
-    if (tab === 'upi') return true; // allow QR even without saved IDs
-    return true;
-  }, [tab, cardList.length]);
+  const [isProcessingStripe, setIsProcessingStripe] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => `₹${value.toFixed(2)}`;
 
-  const handleAdd = () => {
-    if (tab === 'card') {
-      router.push('/settings/payment/card?next=/payment');
-    } else if (tab === 'upi') {
-      router.push('/settings/payment/upi?next=/payment');
-    }
-  };
-
-  const handleContinue = () => {
-    if (tab === 'cash') {
-      router.push('/payment/success?method=cash');
+  // Handle Pay Online button - opens Stripe Payment Sheet directly
+  const handlePayOnline = () => {
+    // Check if platform is web
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Web Payment Not Available',
+        'Online payments are only available on mobile devices. Please use the mobile app or select Cash on Delivery.',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
-    // For UPI with no saved IDs, fall back to QR flow
-    if (tab === 'upi' && upiList.length === 0) {
-      router.push('/payment/qr');
+    // Check if Stripe is available (only on native platforms)
+    if (!processPayment) {
+      const errorMessage = Platform.OS === 'ios' || Platform.OS === 'android'
+        ? '⚠️ Stripe requires a Development Build\n\n' +
+          'If you\'re using Expo Go, Stripe won\'t work.\n\n' +
+          'To fix this:\n' +
+          '1. Stop the app\n' +
+          '2. Run: npx expo prebuild --clean\n' +
+          '3. Run: npx expo run:ios (or android)\n\n' +
+          'First build takes 10-15 minutes.\n\n' +
+          '💡 Use "Cash on Delivery" for now.'
+        : 'Stripe payment is only available on iOS and Android devices. Please use the mobile app.';
+      
+      Alert.alert(
+        'Development Build Required',
+        errorMessage,
+        [
+          { text: 'Use Cash Instead', style: 'cancel', onPress: () => handleCashOnDelivery() },
+          { text: 'OK' }
+        ]
+      );
       return;
     }
 
-    // Card flow requires OTP before success
-    if (tab === 'card') {
-      // Use selected card or default card
-      const cardToUse = selectedCardId || defaultCardId || cardList[0]?.id;
-      setSelectedCardId(cardToUse || null);
-      setShowCardOtp(true);
-      return;
-    }
-
-    // UPI flow - show processing modal
-    if (tab === 'upi' && upiList.length > 0) {
-      // Use selected UPI or default UPI
-      const upiToUse = selectedUpiId || defaultUpiId || upiList[0]?.id;
-      setSelectedUpiId(upiToUse);
-      setShowProcessingModal(true);
-      setShowPaymentButtons(false);
-      return;
-    }
-
-    router.push(`/payment/success?method=${tab}`);
+    setIsProcessingStripe(true);
+    setStripeError(null);
+    
+    // Process payment using Stripe - this will show the Payment Sheet
+    processPayment(
+      totals.total,
+      () => {
+        // Payment successful
+        setIsProcessingStripe(false);
+        router.push(`/payment/success?method=card&amount=${totals.total}`);
+      },
+      (error: any) => {
+        // Payment failed or was cancelled (including user closing the sheet)
+        setIsProcessingStripe(false);
+        // Clear any previous error text and navigate to the unified failure screen.
+        setStripeError(null);
+        router.push('/payment/failure?method=card&type=stripe');
+      }
+    ).catch((error: any) => {
+      // Handle unexpected errors
+      setIsProcessingStripe(false);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setStripeError(null);
+      router.push('/payment/failure?method=card&type=stripe');
+    });
   };
 
-  const handlePaid = () => {
-    setShowProcessingModal(false);
-    setShowPaymentButtons(false);
-    if (selectedUpiId) {
-      router.push(`/payment/success?method=upi&upiId=${selectedUpiId}`);
-    } else {
-      router.push('/payment/success?method=upi');
-    }
-  };
-
-  const handleNotPaid = () => {
-    setShowProcessingModal(false);
-    setShowPaymentButtons(false);
-    if (selectedUpiId) {
-      router.push(`/payment/failure?method=upi&upiId=${selectedUpiId}`);
-    } else {
-      router.push('/payment/failure?method=upi');
-    }
-  };
-
-  const handleEditCard = (item: CardPayment, e: any) => {
-    e?.stopPropagation?.();
-    // Extract last 4 digits from masked number (e.g., "**** 1234" -> "1234")
-    const lastFour = item.maskedNumber.replace(/\D/g, '').slice(-4);
-    // For editing, we'll pass the masked format - user can edit from there
-    router.push(`/settings/payment/card?edit=true&cardId=${item.id}&brand=${item.brand}&name=${encodeURIComponent(item.name)}&number=${encodeURIComponent(item.maskedNumber)}&expires=${item.expires}&next=/payment`);
-  };
-
-  const handleDeleteCard = (item: CardPayment, e: any) => {
-    e?.stopPropagation?.();
-    setCardToDelete(item.id);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteCard = () => {
-    if (cardToDelete) {
-      dispatch(removeCard(cardToDelete));
-      setShowDeleteModal(false);
-      setCardToDelete(null);
-      router.replace('/settings/payment?tab=card');
-    }
-  };
-
-  const cancelDeleteCard = () => {
-    setShowDeleteModal(false);
-    setCardToDelete(null);
-  };
-
-  const renderCardItem = (item: CardPayment) => {
-    const isDefault = item.id === defaultCardId;
-    const isSelected = item.id === selectedCardId;
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={[
-          styles.listCard,
-          {
-            backgroundColor: theme.card,
-            shadowColor: theme.shadow,
-            borderColor: isSelected ? theme.buttonPrimary : theme.divider,
-            borderWidth: isSelected ? 2 : 1,
-          },
-        ]}
-        onPress={() => setSelectedCardId(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.listHeader}>
-          <View style={styles.listLeft}>
-            <Ionicons name="card-outline" size={22} color={theme.textPrimary} />
-            <View style={styles.cardInfo}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>{cardTitle(item.brand)}</Text>
-              <Text style={[styles.sub, { color: theme.textSecondary }]}>Card no : {item.maskedNumber}</Text>
-              <Text style={[styles.sub, { color: theme.textSecondary }]}>Expires : {item.expires}</Text>
-            </View>
-          </View>
-          <View style={styles.rightSection}>
-            {isDefault && (
-              <View style={[styles.defaultBadge, { backgroundColor: (theme as any).success || '#00C853' }]}>
-                <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
-                <Text style={styles.defaultBadgeText}>Default</Text>
-              </View>
-            )}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity onPress={(e) => handleEditCard(item, e)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="pencil" size={18} color={theme.textPrimary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={(e) => handleDeleteCard(item, e)} style={{ marginLeft: 16 }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderUpiItem = (item: UpiAccount) => {
-    const isDefault = item.id === defaultUpiId;
-    const isSelected = item.id === selectedUpiId;
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={[
-          styles.listCard,
-          {
-            backgroundColor: theme.card,
-            shadowColor: theme.shadow,
-            borderColor: isSelected ? theme.buttonPrimary : theme.divider,
-            borderWidth: isSelected ? 2 : 1,
-          },
-        ]}
-        onPress={() => setSelectedUpiId(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.listHeader}>
-          <View style={styles.listLeft}>
-            <Ionicons name="logo-google" size={22} color={theme.textPrimary} />
-            <View style={styles.cardInfo}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>{providerLabel(item.provider)}</Text>
-              <Text style={[styles.sub, { color: theme.textSecondary }]}>UPI ID : {item.upiId}</Text>
-            </View>
-          </View>
-          <View style={styles.rightSection}>
-            {isDefault && (
-              <View style={[styles.defaultBadge, { backgroundColor: (theme as any).success || '#00C853' }]}>
-                <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
-                <Text style={styles.defaultBadgeText}>Default</Text>
-              </View>
-            )}
-            <Verification status={item.status} />
-          </View>
-        </View>
-        <View style={styles.actionsRow}>
-          <TouchableOpacity>
-            <Ionicons name="pencil" size={18} color={theme.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={{ marginLeft: 16 }}>
-            <Ionicons name="trash-outline" size={18} color={theme.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderMethods = () => {
-    if (tab === 'card') {
-      if (cardList.length === 0) return <EmptyState text="No cards saved. Add new." />;
-      return cardList.map(renderCardItem);
-    }
-    if (tab === 'upi') {
-      if (upiList.length === 0) return <EmptyState text="No UPI ID exists. Add new or pay via QR." />;
-      return upiList.map(renderUpiItem);
-    }
-    return (
-      <View style={[styles.cashCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Cash on delivery</Text>
-        <Text style={[styles.sub, { color: theme.textSecondary }]}>
-          Due to handling costs a nominal fee of ₹9 will be charged for orders placed using this option.
-          Avoid this fee by paying online now.
-        </Text>
-      </View>
-    );
+  // Handle Cash on Delivery button
+  const handleCashOnDelivery = () => {
+    router.push('/payment/success?method=cash');
   };
 
   return (
@@ -297,51 +144,61 @@ const PaymentScreen = () => {
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
-        <View style={styles.tabRow}>
-          {TABS.map((t) => {
-            const selected = t.key === tab;
-            return (
-              <TouchableOpacity
-                key={t.key}
-                style={[
-                  styles.tab,
-                  {
-                    backgroundColor: selected ? theme.backgroundSecondary : theme.background,
-                    borderColor: selected ? theme.buttonPrimary : theme.divider,
-                  },
-                ]}
-                onPress={() => setTab(t.key)}
-              >
-                <Ionicons
-                  name={t.icon}
-                  size={22}
-                  color={selected ? theme.buttonPrimary : theme.textSecondary}
-                  style={{ marginBottom: 6 }}
-                />
-                <Text style={[styles.tabLabel, { color: selected ? theme.buttonPrimary : theme.textSecondary }]}>
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        {/* Simplified Payment Options - 2 Columns */}
+        <View style={styles.paymentOptionsRow}>
+          {/* Pay Online - Column 1 */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOptionColumn,
+              {
+                backgroundColor: theme.card,
+                shadowColor: theme.shadow,
+                borderColor: theme.divider,
+              },
+            ]}
+            onPress={handlePayOnline}
+            disabled={isProcessingStripe}
+          >
+            {/* Row 1: Icon */}
+            <Ionicons name="card-outline" size={32} color={theme.buttonPrimary} />
+            {/* Row 2: Main Text */}
+            <Text style={[styles.paymentOptionTitle, { color: theme.textPrimary }]}>
+              Pay Online
+            </Text>
+            {/* Row 3: Subtitle */}
+            <Text style={[styles.paymentOptionSubtitle, { color: theme.textSecondary }]}>
+              Card, Apple Pay, Google Pay
+            </Text>
+          </TouchableOpacity>
+
+          {/* Cash on Delivery - Column 2 */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOptionColumn,
+              {
+                backgroundColor: theme.card,
+                shadowColor: theme.shadow,
+                borderColor: theme.divider,
+              },
+            ]}
+            onPress={handleCashOnDelivery}
+          >
+            {/* Row 1: Icon */}
+            <Ionicons name="cash-outline" size={32} color={theme.buttonPrimary} />
+            {/* Row 2: Main Text */}
+            <Text style={[styles.paymentOptionTitle, { color: theme.textPrimary }]}>
+              Cash on Delivery
+            </Text>
+            {/* Row 3: Subtitle */}
+            <Text style={[styles.paymentOptionSubtitle, { color: theme.textSecondary }]}>
+              Pay when you receive
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.methods}>{renderMethods()}</View>
-
-        {tab !== 'cash' && (
-          <View style={styles.addRow}>
-            <TouchableOpacity style={styles.addLink} onPress={handleAdd}>
-              <Ionicons name="add" size={16} color={theme.buttonPrimary} />
-              <Text style={[styles.addText, { color: theme.buttonPrimary }]}>
-                {tab === 'card' ? 'Add New Card' : 'Add New UPI'}
-              </Text>
-            </TouchableOpacity>
-            {tab === 'upi' && (
-                <TouchableOpacity style={styles.addLink} onPress={() => router.push('/payment/qr')}>
-                <Ionicons name="qr-code-outline" size={16} color={theme.buttonPrimary} />
-            <Text style={[styles.addText, { color: theme.buttonPrimary }]}>Pay via QR</Text>
-              </TouchableOpacity>
-            )}
+        {stripeError && (
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, { color: theme.error }]}>{stripeError}</Text>
           </View>
         )}
 
@@ -374,199 +231,23 @@ const PaymentScreen = () => {
               Your order will be ready in 25 mins
             </Text>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.payButton,
-              { backgroundColor: hasMethods ? theme.buttonText : '#ddd' },
-            ]}
-            disabled={!hasMethods}
-            onPress={handleContinue}
-          >
-            <Text style={[styles.payText, { color: theme.buttonPrimary }]}>Continue Payment</Text>
-          </TouchableOpacity>
+          {/* Processing indicator when Stripe is processing */}
+          {isProcessingStripe && (
+            <View style={styles.processingIndicator}>
+              <ActivityIndicator size="small" color={theme.buttonText} />
+              <Text style={[styles.processingText, { color: theme.buttonText }]}>
+                Processing payment...
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
       <BottomNav active="cart" />
-
-      {/* Card OTP Modal */}
-      {showCardOtp && (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setShowCardOtp(false)}>
-          <View style={styles.otpOverlay}>
-            <View style={[styles.otpCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-              <Text style={[styles.otpTitle, { color: theme.textPrimary }]}>Enter 6-digit OTP</Text>
-              <Text style={[styles.otpSubtitle, { color: theme.textSecondary }]}>
-                We sent an OTP to your bank-registered number.
-              </Text>
-              <TextInput
-                style={[
-                  styles.otpInput,
-                  {
-                    borderColor: cardOtpError ? theme.error : theme.divider,
-                    color: theme.textPrimary,
-                    backgroundColor: theme.inputBackground,
-                  },
-                ]}
-                value={cardOtp}
-                onChangeText={(text) => {
-                  const digits = text.replace(/[^0-9]/g, '').slice(0, 6);
-                  setCardOtp(digits);
-                  if (cardOtpError) setCardOtpError('');
-                }}
-                placeholder="******"
-                placeholderTextColor={theme.textMuted}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-              {!!cardOtpError && <Text style={[styles.otpError, { color: theme.error }]}>{cardOtpError}</Text>}
-              <View style={styles.otpActions}>
-                <TouchableOpacity
-                  style={[styles.otpButton, { backgroundColor: theme.buttonSecondary }]}
-                  onPress={() => setShowCardOtp(false)}
-                >
-                  <Text style={[styles.otpButtonText, { color: theme.textPrimary }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.otpButton, { backgroundColor: theme.buttonPrimary }]}
-                  onPress={() => {
-                    if (cardOtp.length !== 6) {
-                      setCardOtpError('Enter 6 digits');
-                      return;
-                    }
-                    setShowCardOtp(false);
-                    router.push(`/payment/success?method=${tab}`);
-                  }}
-                >
-                  <Text style={[styles.otpButtonText, { color: theme.buttonText }]}>Verify</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Processing Modal */}
-      {showProcessingModal && (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setShowProcessingModal(false)}>
-          <View style={styles.otpOverlay}>
-            <View style={[styles.otpCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-              <Text style={[styles.otpTitle, { color: theme.textPrimary }]}>Redirecting to payment</Text>
-              {!showPaymentButtons ? (
-                <>
-                  <ActivityIndicator size="large" color={theme.buttonPrimary} style={styles.processingSpinner} />
-                  <Text style={[styles.otpSubtitle, { color: theme.textSecondary, marginTop: 16 }]}>
-                    You will be redirected to your bank's website. It might take a few seconds.
-                  </Text>
-                  <Text style={[styles.otpSubtitle, { color: theme.textSecondary, marginTop: 8, fontSize: 12 }]}>
-                    Please do not refresh the page or click the "Back" or "Close" button of your browser.
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <View style={styles.paymentButtonsContainer}>
-                    <TouchableOpacity
-                      style={[styles.paymentButton, { backgroundColor: theme.success }]}
-                      onPress={handlePaid}
-                    >
-                      <Text style={[styles.paymentButtonText, { color: theme.buttonText }]}>Paid</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.paymentButton, { backgroundColor: theme.error }]}
-                      onPress={handleNotPaid}
-                    >
-                      <Text style={[styles.paymentButtonText, { color: theme.buttonText }]}>Not Paid</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <Modal transparent animationType="fade" visible onRequestClose={cancelDeleteCard}>
-          <View style={styles.otpOverlay}>
-            <View style={[styles.otpCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-              <Text style={[styles.otpTitle, { color: theme.textPrimary }]}>Delete Card?</Text>
-              <Text style={[styles.otpSubtitle, { color: theme.textSecondary }]}>
-                Are you sure you want to delete this card?
-              </Text>
-              <View style={styles.otpActions}>
-                <TouchableOpacity
-                  style={[styles.otpButton, { backgroundColor: (theme as any).buttonSecondary || (theme as any).backgroundSecondary || theme.card }]}
-                  onPress={cancelDeleteCard}
-                >
-                  <Text style={[styles.otpButtonText, { color: theme.textPrimary }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.otpButton, { backgroundColor: theme.error || '#D10505' }]}
-                  onPress={confirmDeleteCard}
-                >
-                  <Text style={[styles.otpButtonText, { color: theme.buttonText || '#FFFFFF' }]}>Yes</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
     </View>
   );
 };
 
-const Verification = ({ status }: { status: 'verified' | 'unverified' }) => {
-  const { theme } = useTheme();
-  return (
-    <View style={styles.verification}>
-      <Ionicons
-        name={status === 'verified' ? 'checkmark-circle' : 'alert-circle-outline'}
-        size={16}
-        color={status === 'verified' ? theme.success : theme.textSecondary}
-      />
-      <Text style={[styles.verificationText, { color: status === 'verified' ? theme.success : theme.textSecondary }]}>
-        {status === 'verified' ? 'Verified' : 'Unverified'}
-      </Text>
-    </View>
-  );
-};
-
-const EmptyState = ({ text }: { text: string }) => {
-  const { theme } = useTheme();
-  return (
-    <View style={styles.emptyState}>
-      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{text}</Text>
-    </View>
-  );
-};
-
-const providerLabel = (provider: string) => {
-  switch (provider) {
-    case 'gpay':
-      return 'Google Pay';
-    case 'phonepe':
-      return 'Phone Pe';
-    case 'paytm':
-      return 'Paytm';
-    default:
-      return 'UPI';
-  }
-};
-
-const cardTitle = (brand: string) => {
-  switch (brand) {
-    case 'visa':
-      return 'Visa';
-    case 'mastercard':
-      return 'MasterCard';
-    case 'amex':
-      return 'AmEx';
-    case 'discover':
-      return 'Discover';
-    default:
-      return 'Card';
-  }
-};
 
 const styles = StyleSheet.create({
   root: {
@@ -595,22 +276,41 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 160,
-    gap: 14,
+    gap: 20,
   },
-  tabRow: {
+  paymentOptionsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
-  tab: {
+  paymentOptionColumn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    gap: 12,
   },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+  paymentOptionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  paymentOptionSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(211, 5, 5, 0.1)',
   },
   methods: {
     gap: 10,
@@ -728,35 +428,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  payButton: {
-    marginTop: 6,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  payText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  verification: {
+  processingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  verificationText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyState: {
-    padding: 16,
-    alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F1F1F1',
+    paddingVertical: 12,
+    gap: 8,
   },
-  emptyText: {
+  processingText: {
     fontSize: 14,
     fontWeight: '600',
   },
@@ -837,6 +516,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 8,
+  },
 });
+
+// Main PaymentScreen component wrapped with StripeProvider (only on native)
+const PaymentScreen = () => {
+  // On web, render without StripeProvider
+  if (Platform.OS === 'web') {
+    return <PaymentScreenContent />;
+  }
+
+  // On native platforms, wrap with StripeProvider if available
+  if (StripeProvider && STRIPE_CONFIG) {
+    return (
+      <StripeProvider
+        publishableKey={STRIPE_CONFIG.publishableKey}
+        merchantIdentifier={STRIPE_CONFIG.merchantIdentifier}
+      >
+        <PaymentScreenContent />
+      </StripeProvider>
+    );
+  }
+
+  // Fallback if Stripe is not available
+  return <PaymentScreenContent />;
+};
 
 export default PaymentScreen;

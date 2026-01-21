@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import BottomNav from '../components/BottomNav';
 import { useAppSelector } from '../store/hooks';
 import { selectCartItems } from '../store/slices/cartSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const OrderSummaryScreen = () => {
@@ -12,10 +13,10 @@ const OrderSummaryScreen = () => {
   const params = useLocalSearchParams<{ method?: string }>();
   const method = params.method?.toString() || 'online';
   const cartItems = useAppSelector(selectCartItems);
-  const orders = useAppSelector((state) => state.orders.list);
-  const addresses = useAppSelector((state) => state.address.items);
-  const defaultAddressId = useAppSelector((state) => state.address.defaultAddressId);
-  const selectedAddressId = useAppSelector((state) => state.address.selectedAddressId);
+  const orders = useAppSelector((state: RootState) => state.orders.list);
+  const addresses = useAppSelector((state: RootState) => state.address.items);
+  const defaultAddressId = useAppSelector((state: RootState) => state.address.defaultAddressId);
+  const selectedAddressId = useAppSelector((state: RootState) => state.address.selectedAddressId);
   
   // Get items from most recent order if cart is empty, otherwise use cart items
   const items = useMemo(() => {
@@ -36,11 +37,11 @@ const OrderSummaryScreen = () => {
   // Use selected address if available, otherwise use default address, otherwise first address
   const primaryAddress = useMemo(() => {
     if (selectedAddressId) {
-      const selected = addresses.find((addr) => addr.id === selectedAddressId);
+      const selected = addresses.find((addr: typeof addresses[number]) => addr.id === selectedAddressId);
       if (selected) return selected;
     }
     if (defaultAddressId) {
-      const defaultAddr = addresses.find((addr) => addr.id === defaultAddressId);
+      const defaultAddr = addresses.find((addr: typeof addresses[number]) => addr.id === defaultAddressId);
       if (defaultAddr) return defaultAddr;
     }
     return addresses[0] || null;

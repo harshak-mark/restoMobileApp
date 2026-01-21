@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.ReactNative"
     },
     "android": {
       "adaptiveIcon": {
@@ -45,7 +46,14 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.anonymous.ReactNative",
+          "enableGooglePay": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

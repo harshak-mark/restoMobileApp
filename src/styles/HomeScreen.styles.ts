@@ -394,7 +394,7 @@ export const styles = StyleSheet.create({
   // Special Offer Section Styles
   specialOfferContainer: {
     marginTop: 10,
-    marginBottom: 60,
+    marginBottom: 100,
     height: 180,
     borderRadius: 16,
     //overflow: 'hidden',
