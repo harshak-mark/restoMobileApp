@@ -50,6 +50,9 @@ export default function VerificationScreen({
     isEmail(emailOrPhone) ? 'email' : 'mobile'
   );
   const [mobileNumberForDelivery, setMobileNumberForDelivery] = useState<string>('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyButtonText, setVerifyButtonText] = useState('Verify');
+  const [isVerified, setIsVerified] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const mobileInputRef = useRef<TextInput | null>(null);
@@ -146,30 +149,46 @@ export default function VerificationScreen({
 
     // Clear error if OTP is complete
     setOtpError('');
+    setIsVerifying(true);
+    setIsVerified(true);
+    setVerifyButtonText('Verified');
 
-    // Call the verification success callback first (to register user/save password)
-    if (context === 'signup' || context === 'reset_password') {
-      if (onVerificationSuccess) {
-        onVerificationSuccess();
-      }
-      // OTP verified successfully - show success UI
-      console.log('Setting showSuccess to true');
-      setShowSuccess(true);
-    } else {
-      // For login context (forgot password flow) - navigate to reset password
-      if (onClose) {
-        onClose();
-      }
-      if (onNavigateToResetPassword) {
-        setTimeout(() => {
-          onNavigateToResetPassword();
-        }, 200);
+    // After 3 seconds, proceed with verification success flow
+    setTimeout(() => {
+      // Call the verification success callback first (to register user/save password)
+      if (context === 'signup') {
+        if (onVerificationSuccess) {
+          onVerificationSuccess();
+        }
+        // Don't show success message for signup - user will close manually
+        // Keep button text as "Verified" - don't reset to "Verify"
+        setIsVerifying(false);
+        // Don't auto-close - let user close manually
+      } else if (context === 'reset_password') {
+        if (onVerificationSuccess) {
+          onVerificationSuccess();
+        }
+        // OTP verified successfully - show success UI for password reset
+        console.log('Setting showSuccess to true');
+        setShowSuccess(true);
+        setIsVerifying(false);
+        // Keep button text as "Verified"
       } else {
-        setTimeout(() => {
-          router.replace('/reset-password');
-        }, 200);
+        // For login context (forgot password flow) - navigate to reset password
+        if (onClose) {
+          onClose();
+        }
+        if (onNavigateToResetPassword) {
+          setTimeout(() => {
+            onNavigateToResetPassword();
+          }, 200);
+        } else {
+          setTimeout(() => {
+            router.replace('/reset-password');
+          }, 200);
+        }
       }
-    }
+    }, 3000);
   };
 
   const handleChangeEmail = () => {
@@ -177,11 +196,14 @@ export default function VerificationScreen({
     if (onClose) {
       onClose();
     }
-    // Navigate to login/signup page
-    router.replace({
-      pathname: '/login',
-      params: { tab: 'signup' },
-    });
+    // Only navigate to login/signup page if not signup context after verification
+    // For signup context, onClose will handle showing welcome screen
+    if (context !== 'signup' || !isVerified) {
+      router.replace({
+        pathname: '/login',
+        params: { tab: 'signup' },
+      });
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -351,6 +373,7 @@ export default function VerificationScreen({
                 keyboardType="number-pad"
                 maxLength={1}
                 selectTextOnFocus
+                editable={!isVerified}
               />
             ))}
           </View>
@@ -412,16 +435,24 @@ export default function VerificationScreen({
 
           {/* Verify Button */}
           <TouchableOpacity
-            style={[styles.resetButton, { backgroundColor: theme.buttonPrimary }]}
+            style={[
+              styles.resetButton,
+              {
+                backgroundColor: otp.every((digit) => digit.length === 1) && !isVerifying
+                  ? theme.buttonPrimary
+                  : theme.buttonPrimary + '80', // 50% opacity when disabled
+              },
+            ]}
             onPress={handleVerify}
+            disabled={otp.every((digit) => digit.length === 1) === false || isVerifying}
           >
             <Text style={[styles.resetButtonText, { color: theme.buttonText }]}>
-              Verify
+              {verifyButtonText}
             </Text>
           </TouchableOpacity>
 
-          {/* Success Message and Login Button - shown after verification */}
-          {showSuccess && (
+          {/* Success Message and Login Button - shown after verification (not for signup) */}
+          {showSuccess && context !== 'signup' && (
             <>
               <Text style={[styles.successMessage, { color: theme.textPrimary, marginTop: 20, textAlign: 'center' }]}>
                 {context === 'reset_password'
@@ -436,7 +467,7 @@ export default function VerificationScreen({
                   if (onClose) {
                     onClose();
                   }
-                  // Navigate to login page with login tab active
+                  // Navigate to login (context is already not 'signup' at this point)
                   router.replace({
                     pathname: '/login',
                     params: { tab: 'login' },
