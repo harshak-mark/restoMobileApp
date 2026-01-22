@@ -4,23 +4,24 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Logo from '../../assets/LOGO.svg';
-import LogoWhite from '../../assets/images/LOGOwhite.svg';
 import GoogleIcon from '../../assets/images/Google.svg';
+import LogoWhite from '../../assets/images/LOGOwhite.svg';
 import LoginBg from '../../assets/images/start/loginbg.svg';
 import LoadingAnimation from '../components/LoadingAnimation';
 import WelcomeScreen from '../components/WelcomeScreen';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loginUser, registerUser, setSignupPending } from '../store/slices/authSlice';
+import type { RootState } from '../store/store';
 import { createStyles } from '../styles/LoginSignupScreen.styles';
 import { useTheme } from '../theme/useTheme';
 import VerificationScreen from './VerificationScreen';
@@ -34,7 +35,8 @@ export default function LoginSignupScreen() {
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme, insets.bottom), [theme, insets.bottom]);
   const dispatch = useAppDispatch();
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
+  const hasLoggedInBefore = useAppSelector((state: RootState) => state.auth.hasLoggedInBefore);
   const params = useLocalSearchParams<{ tab?: string }>();
   
   const [activeTab, setActiveTab] = useState<TabType>('login');
@@ -62,6 +64,8 @@ export default function LoginSignupScreen() {
   const [showLoading, setShowLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeContext, setWelcomeContext] = useState<'signup' | 'login'>('signup');
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [signupVerificationSuccess, setSignupVerificationSuccess] = useState(false);
   const [pendingSignupData, setPendingSignupData] = useState<{
     emailOrPhone: string;
     password: string;
@@ -69,6 +73,13 @@ export default function LoginSignupScreen() {
     phone?: string;
     name?: string;
   } | null>(null);
+
+  // Clear "Account doesn't exist" error when switching to signup tab
+  useEffect(() => {
+    if (activeTab === 'signup' && passwordError && passwordError.includes('signup')) {
+      setPasswordError('');
+    }
+  }, [activeTab, passwordError]);
 
   // Google OAuth setup
   // Note: For production, configure your Google Cloud Console OAuth credentials
@@ -159,9 +170,14 @@ export default function LoginSignupScreen() {
       return;
     }
 
-    // All validations passed - login the user
+    // All validations passed - check if this is first login BEFORE dispatching
+    // (dispatch will set hasLoggedInBefore = true, so we need to check before)
+    const isFirstTimeLogin = !hasLoggedInBefore;
+    setIsFirstLogin(isFirstTimeLogin);
+
+    // Dispatch login (this will set hasLoggedInBefore = true)
     dispatch(loginUser(email.trim()));
-    
+
     // Show loading animation then welcome screen
     setVerificationEmail(email.trim());
     setWelcomeContext('login');
@@ -354,14 +370,16 @@ export default function LoginSignupScreen() {
   const handleSignupVerificationSuccess = () => {
     console.log('handleSignupVerificationSuccess called');
     
-    // Don't close verification modal - let VerificationScreen handle success modal
-    // Just register the user and clear form fields
-    
+    // Register the user and clear form fields. The verification modal will close
+    // and the Welcome screen will be shown from here.
     if (pendingSignupData) {
       // Register the user now that OTP is verified
       dispatch(registerUser(pendingSignupData));
       setPendingSignupData(null);
     }
+    
+    // Mark that signup verification was successful
+    setSignupVerificationSuccess(true);
     
     // Clear form fields
     setEmail('');
@@ -371,8 +389,10 @@ export default function LoginSignupScreen() {
     setConfirmPasswordError('');
     setEmailError('');
     setPasswordStrength(0);
-    
-    // Success modal will be shown by VerificationScreen
+
+    // Prepare welcome screen (will show when modal closes)
+    setVerificationEmail(email.trim());
+    setWelcomeContext('signup');
   };
 
   // Calculate rgba color for 20% opacity background
@@ -434,6 +454,7 @@ export default function LoginSignupScreen() {
               setPasswordError('');
               setConfirmPasswordError('');
               setEmailError('');
+              setPasswordStrength(0);
             }}
           >
             <Text
@@ -520,7 +541,7 @@ export default function LoginSignupScreen() {
                   />
                 </TouchableOpacity>
               </View>
-              {passwordError ? (
+              {passwordError && activeTab === 'login' ? (
                 <View style={styles.errorContainer}>
                   {passwordError.includes('signup') ? (
                     <Text style={styles.errorText}>
@@ -535,6 +556,10 @@ export default function LoginSignupScreen() {
                   ) : (
                     <Text style={styles.errorText}>{passwordError}</Text>
                   )}
+                </View>
+              ) : passwordError && activeTab === 'signup' && !passwordError.includes('signup') ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{passwordError}</Text>
                 </View>
               ) : null}
             </View>
@@ -674,6 +699,7 @@ export default function LoginSignupScreen() {
               <WelcomeScreen
                 emailOrPhone={verificationEmail}
                 context={welcomeContext}
+                isFirstLogin={welcomeContext === 'login' ? isFirstLogin : false}
                 onClose={() => {
                   setShowWelcome(false);
                   // Clear form fields for both login and signup
@@ -698,6 +724,11 @@ export default function LoginSignupScreen() {
           context={verificationContext === 'google_signup' ? 'signup' : verificationContext}
           onClose={() => {
             setShowVerification(false);
+            // If it was a successful signup verification, show welcome screen
+            if (signupVerificationSuccess) {
+              setShowWelcome(true);
+              setSignupVerificationSuccess(false);
+            }
             setPendingSignupData(null);
           }}
           onVerificationSuccess={() => {
