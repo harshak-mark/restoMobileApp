@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: { fontSize: 22, fontWeight: '800' },
-  subtitle: { fontSize: 16, fontWeight: '600', marginTop: 2 },
+  subtitle: { fontSize: 16, fontWeight: '600', marginTop: 2, textAlign: 'center' },
   meta: { fontSize: 13, marginTop: 2 },
   helper: { marginTop: 12, fontSize: 13 },
   ctaButton: {

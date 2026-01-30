@@ -9,6 +9,7 @@ import { picksYoursData, popularItemsData } from '../data/foodItems';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setDefaultAddress, setSelectedAddress, type Address } from '../store/slices/addressSlice';
 import { addItem } from '../store/slices/cartSlice';
+import type { RootState } from '../store/store';
 import { styles } from '../styles/HomeScreen.styles';
 import { useTheme } from '../theme/useTheme';
 
@@ -69,8 +70,8 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const t = theme as any;
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
   
   // Get current user data
   const currentUser = user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);

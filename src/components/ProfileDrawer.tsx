@@ -3,6 +3,7 @@ import { router, type Href } from 'expo-router';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/slices/authSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 interface ProfileDrawerProps {
@@ -14,8 +15,8 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
   const { theme } = useTheme();
   const styles = createStyles(theme);
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
   
   // Get user data from available sources
   const activeUser = user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);

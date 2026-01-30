@@ -52,6 +52,7 @@ export interface AuthState {
     name?: string;
   } | null;
   twoFactorEnabled: boolean;
+  hasLoggedInBefore: boolean;
 }
 
 const initialState: AuthState = {
@@ -70,6 +71,7 @@ const initialState: AuthState = {
   },
   signupPending: null,
   twoFactorEnabled: false,
+  hasLoggedInBefore: false,
 };
 
 // Async thunks for API calls
@@ -257,6 +259,7 @@ const authSlice = createSlice({
           phoneVerified: user.phoneVerified,
         };
         state.isAuthenticated = true;
+        state.hasLoggedInBefore = true;
       }
     },
     // Logout user

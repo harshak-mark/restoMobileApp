@@ -180,6 +180,14 @@ const OrderSummaryScreen = () => {
                   onSubmitEditing={handleNoteSubmit}
                   onBlur={handleSaveNote}
                 />
+                {orderNote.trim().length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.saveNoteButton, { backgroundColor: theme.buttonPrimary }]}
+                    onPress={handleSaveNote}
+                  >
+                    <Text style={[styles.saveNoteButtonText, { color: theme.buttonText }]}>Save</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               <View style={styles.noteDisplayContainer}>
@@ -339,6 +347,18 @@ const styles = StyleSheet.create({
     padding: 8,
     minHeight: 40,
     textAlignVertical: 'top',
+    marginBottom: 8,
+  },
+  saveNoteButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  saveNoteButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   noteDisplayContainer: {
     marginTop: 4,

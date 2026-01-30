@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ProfileDrawer from '../components/ProfileDrawer';
 import { useAppSelector } from '../store/hooks';
+import type { RootState } from '../store/store';
 import { styles } from '../styles/BiriyaniScreen.styles';
 import { useTheme } from '../theme/useTheme';
 
@@ -15,8 +16,8 @@ const carouselImages = [
 
 export default function BiriyaniScreen() {
   const { theme } = useTheme();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
 
   const currentUser =
     user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);

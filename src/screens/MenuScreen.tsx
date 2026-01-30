@@ -18,14 +18,12 @@ import {
 } from '../data/foodItems';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addItem } from '../store/slices/cartSlice';
+import type { RootState } from '../store/store';
 import { styles } from '../styles/MenuScreen.styles';
 import { useTheme } from '../theme/useTheme';
 
-// Import category tab icons
-import AllItemsIcon from '../../assets/images/icon/allitems.svg';
-import BreakfastIcon from '../../assets/images/icon/breakfast.svg';
-import DinnerIcon from '../../assets/images/icon/dinner.svg';
-import LunchIcon from '../../assets/images/icon/lunch.svg';
+// Category tab icons - using Ionicons instead of SVG
+// Icons will be rendered inline using Ionicons component
 
 // Import category icons
 const HotDealsIcon = require('../../assets/images/food/icons/hotdeals.png');
@@ -74,8 +72,8 @@ function getRandomItems<T>(array: T[], count: number): T[] {
 export default function MenuScreen() {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
   
   // Get current user data
   const currentUser = user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);
@@ -148,10 +146,10 @@ export default function MenuScreen() {
   ];
 
   const categoryTabs = [
-    { id: 'all', label: 'All items', icon: AllItemsIcon },
-    { id: 'breakfast', label: 'Breakfast', icon: BreakfastIcon },
-    { id: 'lunch', label: 'Lunch', icon: LunchIcon },
-    { id: 'dinner', label: 'Dinner', icon: DinnerIcon },
+    { id: 'all', label: 'All items', iconName: 'grid-outline' as const },
+    { id: 'breakfast', label: 'Breakfast', iconName: 'cafe-outline' as const },
+    { id: 'lunch', label: 'Lunch', iconName: 'restaurant-outline' as const },
+    { id: 'dinner', label: 'Dinner', iconName: 'wine-outline' as const },
   ];
 
   const filteredFoodItems = sectionFoodMap[selectedCategory] || allItems;
@@ -293,8 +291,9 @@ export default function MenuScreen() {
         <View style={styles.categoryTabsContainer}>
           {categoryTabs.map((tab) => {
             const isActive = selectedCategory === tab.id;
-            const IconComponent = tab.icon;
-            const iconColor = isActive ? '#FFFFFF' : '#4B5563';
+            // Use a consistent dark grey for inactive tabs so they are always visible
+            // on the light tab background, even in dark mode.
+            const baseColor = isActive ? theme.buttonText : '#4B5563';
             return (
               <TouchableOpacity
                 key={tab.id}
@@ -307,18 +306,16 @@ export default function MenuScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.categoryTabIconContainer}>
-                  <IconComponent
-                    width={20}
-                    height={20}
-                    fill={iconColor}
-                    color={iconColor}
+                  <Ionicons
+                    name={tab.iconName}
+                    size={20}
+                    color={baseColor}
                   />
                 </View>
                 <Text
                   style={[
                     styles.categoryTabText,
-                    isActive && styles.categoryTabTextActive,
-                    !isActive && styles.categoryTabTextInactive,
+                    { color: baseColor },
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="tail"

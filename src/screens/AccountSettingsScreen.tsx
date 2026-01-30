@@ -6,12 +6,13 @@ import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 're
 import BottomNav from '../components/BottomNav';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setTwoFactorEnabled } from '../store/slices/authSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const AccountSettingsScreen = () => {
   const { theme, setTheme, themeMode } = useTheme();
   const dispatch = useAppDispatch();
-  const twoFactorEnabled = useAppSelector((state) => state.auth.twoFactorEnabled);
+  const twoFactorEnabled = useAppSelector((state: RootState) => state.auth.twoFactorEnabled);
 
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(true);
@@ -138,6 +139,7 @@ const AccountSettingsScreen = () => {
               }}
               trackColor={{ false: '#ccc', true: theme.buttonPrimary }}
               thumbColor="#fff"
+              style={{ transform: [{ scale: 0.6 }] }}
             />
           </View>
 
@@ -175,6 +177,7 @@ const SettingRow = ({
         onValueChange={onValueChange}
         trackColor={{ false: '#ccc', true: themeColor }}
         thumbColor="#fff"
+        style={{ transform: [{ scale: 0.6 }] }}
       />
     </View>
   );

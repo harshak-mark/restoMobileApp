@@ -8,9 +8,15 @@ interface WelcomeScreenProps {
   emailOrPhone: string;
   onClose?: () => void;
   context?: 'signup' | 'login';
+  isFirstLogin?: boolean;
 }
 
-export default function WelcomeScreen({ emailOrPhone, onClose, context = 'signup' }: WelcomeScreenProps) {
+export default function WelcomeScreen({
+  emailOrPhone,
+  onClose,
+  context = 'signup',
+  isFirstLogin = false,
+}: WelcomeScreenProps) {
   const { theme } = useTheme();
 
   // Extract username from email (part before @) or show "Username" for phone numbers
@@ -45,7 +51,7 @@ export default function WelcomeScreen({ emailOrPhone, onClose, context = 'signup
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Welcome Title */}
       <Text style={[styles.welcomeText, { color: theme.buttonPrimary }]}>
-        {context === 'login' ? 'Welcome back' : 'Welcome'}
+        {context === 'login' ? (isFirstLogin ? 'Welcome' : 'Welcome') : 'Welcome'}
       </Text>
 
       {/* User Avatar */}

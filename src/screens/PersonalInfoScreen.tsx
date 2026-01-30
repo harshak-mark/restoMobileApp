@@ -5,6 +5,7 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 
 import BottomNav from '../components/BottomNav';
 import { useAppSelector } from '../store/hooks';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const PersonalInfoScreen = () => {
@@ -12,8 +13,8 @@ const PersonalInfoScreen = () => {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const params = useLocalSearchParams<{ from?: string }>();
   const backToSettings = params.from === 'settings';
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
 
   const activeUser = user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);
   const fullName =
@@ -230,7 +231,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 80,
+    paddingTop: 100,
     paddingBottom: 16,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -313,13 +314,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 4,
-    color: '#2C2C3A',
+    color: theme.textPrimary,
     fontFamily: 'Inter_700Bold',
   },
   bioText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#A0A5BA',
+    color: theme.textSecondary,
     fontFamily: 'Inter_400Regular',
   },
   infoCard: {

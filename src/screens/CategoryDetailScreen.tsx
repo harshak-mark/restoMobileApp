@@ -9,6 +9,7 @@ import ProfileDrawer from '../components/ProfileDrawer';
 import { FoodItem, categoryItemsData, picksYoursData } from '../data/foodItems';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addItem } from '../store/slices/cartSlice';
+import type { RootState } from '../store/store';
 import { styles as categoryStyles } from '../styles/CategoryDetailScreen.styles';
 import { styles as homeStyles } from '../styles/HomeScreen.styles';
 import { useTheme } from '../theme/useTheme';
@@ -27,8 +28,8 @@ export default function CategoryDetailScreen({ category: propCategory, items }: 
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ category?: string }>();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
 
   const currentUser =
     user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);

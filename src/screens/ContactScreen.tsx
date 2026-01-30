@@ -432,7 +432,7 @@ const ContactScreen = () => {
       )}
 
       <BottomNav 
-        active="home" 
+        active="view" 
         buttonType="circle" 
         onCirclePress={handleCirclePress}
         isPopupOpen={isPopupOpen}

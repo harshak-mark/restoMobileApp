@@ -6,6 +6,7 @@ import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import BottomNav from '../components/BottomNav';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { CardPayment, removeCard, removeUpi, setDefaultCard, setDefaultUpi, UpiAccount } from '../store/slices/paymentSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const SavePaymentMethodScreen = () => {
@@ -16,10 +17,10 @@ const SavePaymentMethodScreen = () => {
   const next = (params.next as string | undefined) || undefined;
   const backToSettings = params.from === 'settings';
 
-  const upiList = useAppSelector((state) => state.payment.upiList);
-  const cardList = useAppSelector((state) => state.payment.cardList);
-  const defaultUpiId = useAppSelector((state) => state.payment.defaultUpiId);
-  const defaultCardId = useAppSelector((state) => state.payment.defaultCardId);
+  const upiList = useAppSelector((state: RootState) => state.payment.upiList);
+  const cardList = useAppSelector((state: RootState) => state.payment.cardList);
+  const defaultUpiId = useAppSelector((state: RootState) => state.payment.defaultUpiId);
+  const defaultCardId = useAppSelector((state: RootState) => state.payment.defaultCardId);
 
   const activeColor = theme.buttonPrimary;
   const inactiveBg = theme.backgroundSecondary;
@@ -259,7 +260,7 @@ const SavePaymentMethodScreen = () => {
               </Text>
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: theme.buttonSecondary || theme.backgroundSecondary }]}
+                  style={[styles.modalButton, { backgroundColor: (theme as any).buttonSecondary ?? theme.backgroundSecondary }]}
                   onPress={cancelDelete}
                 >
                   <Text style={[styles.modalButtonText, { color: theme.textPrimary }]}>Cancel</Text>

@@ -65,13 +65,29 @@ export default function MyOrdersScreen() {
           style={[styles.tabButton, tab === 'ongoing' && styles.tabButtonActive]}
           onPress={() => setTab('ongoing')}
         >
-          <Text style={[styles.tabText, tab === 'ongoing' && styles.tabTextActive]}>Ongoing</Text>
+          <Text
+            style={[
+              styles.tabText,
+              tab === 'ongoing' && styles.tabTextActive,
+              (theme as any).mode === 'dark' && { color: theme.buttonText },
+            ]}
+          >
+            Ongoing
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, tab === 'history' && styles.tabButtonActive]}
           onPress={() => setTab('history')}
         >
-          <Text style={[styles.tabText, tab === 'history' && styles.tabTextActive]}>History</Text>
+          <Text
+            style={[
+              styles.tabText,
+              tab === 'history' && styles.tabTextActive,
+              (theme as any).mode === 'dark' && { color: theme.buttonText },
+            ]}
+          >
+            History
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -118,7 +134,12 @@ export default function MyOrdersScreen() {
                   <Ionicons name="star-outline" size={18} color={theme.textPrimary} />
                   <Text style={[styles.secondaryText, { color: theme.textPrimary }]}>Rate</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.secondaryBtn, { borderColor: theme.divider }]} onPress={() => {}}>
+                <TouchableOpacity
+                  style={[styles.secondaryBtn, { borderColor: theme.divider }]}
+                  onPress={() => {
+                    router.replace('/contact');
+                  }}
+                >
                   <Ionicons name="call-outline" size={18} color={theme.textPrimary} />
                   <Text style={[styles.secondaryText, { color: theme.textPrimary }]}>Support</Text>
                 </TouchableOpacity>

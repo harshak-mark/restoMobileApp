@@ -15,6 +15,7 @@ import LoginBg from '../../assets/images/start/loginbg.svg';
 import VerificationScreen from '../screens/VerificationScreen';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearPasswordReset, setPasswordResetEmail, updateUserPassword } from '../store/slices/authSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -25,8 +26,8 @@ export default function ResetPasswordScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const dispatch = useAppDispatch();
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
-  const passwordResetState = useAppSelector((state) => state.auth.passwordReset);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
+  const passwordResetState = useAppSelector((state: RootState) => state.auth.passwordReset);
   
   const [step, setStep] = useState<ResetStep>('email');
   const [email, setEmail] = useState('');

@@ -7,14 +7,15 @@ import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity
 import BottomNav from '../components/BottomNav';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/slices/authSlice';
+import type { RootState } from '../store/store';
 import { useTheme } from '../theme/useTheme';
 
 const EditProfileScreen = () => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const registeredUsers = useAppSelector((state) => state.auth.registeredUsers);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const registeredUsers = useAppSelector((state: RootState) => state.auth.registeredUsers);
 
   const activeUser = user || (registeredUsers.length > 0 ? registeredUsers[registeredUsers.length - 1] : null);
 
@@ -236,14 +237,14 @@ const EditProfileScreen = () => {
               Please check your email
             </Text>
             <TextInput
-              style={[styles.otpInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: (theme as any).divider || theme.textMuted }]}
+              style={[styles.otpInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: (theme as any).divider || '#CCCCCC' }]}
               value={emailOtp}
               onChangeText={(text) => {
                 const digits = text.replace(/\D/g, '').slice(0, 6);
                 setEmailOtp(digits);
               }}
-              placeholder="Enter 6 digit OTP"
-              placeholderTextColor={theme.inputPlaceholder || theme.textMuted}
+              placeholder="Enter 6digit OTP"
+              placeholderTextColor={theme.inputPlaceholder || '#999999'}
               keyboardType="number-pad"
               maxLength={6}
             />
@@ -275,14 +276,14 @@ const EditProfileScreen = () => {
               Please check your phone
             </Text>
             <TextInput
-              style={[styles.otpInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: (theme as any).divider || theme.textMuted }]}
+              style={[styles.otpInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: (theme as any).divider || '#CCCCCC' }]}
               value={phoneOtp}
               onChangeText={(text) => {
                 const digits = text.replace(/\D/g, '').slice(0, 6);
                 setPhoneOtp(digits);
               }}
               placeholder="Enter 6 digit OTP"
-              placeholderTextColor={theme.inputPlaceholder || theme.textMuted}
+              placeholderTextColor={theme.inputPlaceholder || '#999999'}
               keyboardType="number-pad"
               maxLength={6}
             />

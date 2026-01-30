@@ -32,7 +32,7 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
   key: 'root',
   storage: storage,
-  whitelist: ['registeredUsers', 'user', 'isAuthenticated', 'token'], // Only persist these fields
+  whitelist: ['registeredUsers', 'user', 'isAuthenticated', 'token', 'hasLoggedInBefore'], // Only persist these fields
 };
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
